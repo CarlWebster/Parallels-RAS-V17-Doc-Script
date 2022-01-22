@@ -5,3 +5,13 @@
 
 #Version 1.0 released to the community on 5-August-2020
 #
+#Version 1.01 19-Apr-2021
+#	Added a message to the error message for the missing RAS module
+#		Added a link to the V1 ReadMe file
+#	Added the missing License section for published RDSH applications to Text and HTML output
+#	Changed all Write-Verbose statements from Get-Date to Get-Date -Format G as requested by Guy Leech
+#	Changed the font size of Word/PDF tables from 11 to 10 to prevent most word wrapping to multiple lines
+#	Fixed several invalid $Null comparisons
+#	Reorder Parameters in an order recommended by Guy Leech
+#	Updated Function SetWordCellFormat to the latest version
+#	Updated the ReadMe file

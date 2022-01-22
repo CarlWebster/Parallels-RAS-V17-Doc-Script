@@ -3,22 +3,22 @@
 
 <#
 .SYNOPSIS
-	Creates a complete inventory of Parallels Remote Application Server.
+	Creates a complete inventory of a V17 Parallels Remote Application Server.
 .DESCRIPTION
-	Creates a complete inventory of Parallels Remote Application Server (RAS) using 
+	Creates a complete inventory of a V17 Parallels Remote Application Server (RAS) using 
 	Microsoft PowerShell, Word, plain text, or HTML.
 	
 	The script requires at least PowerShell version 3 but runs best in version 5.
 
-	Word is NOT needed to run the script. This script will output in Text and HTML.
+	Word is NOT needed to run the script. This script outputs in Text and HTML.
 	The default output format is HTML.
 	
-	Creates an output file named RASInventory.<fileextension>.
+	Creates an output file named Parallels_RAS.<fileextension>.
 	
 	You do NOT have to run this script on a server running RAS. This script was developed 
 	and run from a Windows 10 VM.
 
-	Word and PDF document includes a Cover Page, Table of Contents and Footer.
+	Word and PDF document includes a Cover Page, Table of Contents, and Footer.
 	Includes support for the following language versions of Microsoft Word:
 		Catalan
 		Chinese
@@ -33,12 +33,59 @@
 		Spanish
 		Swedish
 
+.PARAMETER ServerName
+	Specifies which RAS server to use to run the script against.
+	
+	ServerName can be entered as the NetBIOS name, FQDN, localhost, or IP Address.
+	
+	If entered as localhost, the actual computer name is determined and used.
+	
+	If entered as an IP address, an attempt is made to determine and use the actual 
+	computer name.
+	
+	Default value is LocalHost
+.PARAMETER User
+	Username to use for the connection to the RAS server.
+
+	Default value is contained in $env:username
 .PARAMETER HTML
 	Creates an HTML file with an .html extension.
 	
 	HTML is now the default report format.
 	
 	This parameter is set True if no other output format is selected.
+.PARAMETER Text
+	Creates a formatted text file with a .txt extension.
+	
+	This parameter is disabled by default.
+.PARAMETER Folder
+	Specifies the optional output folder to save the output report. 
+.PARAMETER AddDateTime
+	Adds a date timestamp to the end of the file name.
+	
+	The timestamp is in the format of yyyy-MM-dd_HHmm.
+	June 1, 2022 at 6PM is 2022-06-01_1800.
+	
+	Output filename will be ReportName_2022-06-01_1800.<ext>.
+	
+	This parameter is disabled by default.
+	This parameter has an alias of ADT.
+.PARAMETER Dev
+	Clears errors at the beginning of the script.
+	Outputs all errors to a text file at the end of the script.
+	
+	This is used when the script developer requests more troubleshooting data.
+	The text file is placed in the same folder from where the script is run.
+	
+	This parameter is disabled by default.
+.PARAMETER Log
+	Generates a log file for troubleshooting.
+.PARAMETER ScriptInfo
+	Outputs information about the script to a text file.
+	The text file is placed in the same folder from where the script is run.
+	
+	This parameter is disabled by default.
+	This parameter has an alias of SI.
 .PARAMETER MSWord
 	SaveAs DOCX file
 	
@@ -53,20 +100,6 @@
 	This parameter uses Word's SaveAs PDF capability.
 
 	This parameter is disabled by default.
-.PARAMETER Text
-	Creates a formatted text file with a .txt extension.
-	
-	This parameter is disabled by default.
-.PARAMETER AddDateTime
-	Adds a date timestamp to the end of the file name.
-	
-	The timestamp is in the format of yyyy-MM-dd_HHmm.
-	June 1, 2019 at 6PM is 2021-06-01_1800.
-	
-	Output filename will be ReportName_2021-06-01_1800.<ext>.
-	
-	This parameter is disabled by default.
-	This parameter has an alias of ADT.
 .PARAMETER CompanyAddress
 	Company Address to use for the Cover Page, if the Cover Page has the Address field.
 	
@@ -84,7 +117,7 @@
 	This parameter is only valid with the MSWORD and PDF output parameters.
 	This parameter has an alias of CA.
 .PARAMETER CompanyEmail
-	Company Email to use for the Cover Page, if the Cover Page has the Email field. 
+	Company Email to use for the Cover Page if the Cover Page has the Email field. 
 	
 	The following Cover Pages have an Email field:
 		Facet (Word 2013/2016)
@@ -92,7 +125,7 @@
 	This parameter is only valid with the MSWORD and PDF output parameters.
 	This parameter has an alias of CE.
 .PARAMETER CompanyFax
-	Company Fax to use for the Cover Page, if the Cover Page has the Fax field. 
+	Company Fax to use for the Cover Page if the Cover Page has the Fax field. 
 	
 	The following Cover Pages have a Fax field:
 		Contrast (Word 2010)
@@ -120,7 +153,7 @@
 	This parameter has an alias of CPh.
 .PARAMETER CoverPage
 	What Microsoft Word Cover Page to use.
-	Only Word 2010, 2013 and 2016 are supported.
+	Only Word 2010, 2013, and 2016 are supported.
 	(default cover pages in Word en-US)
 
 	Valid input is:
@@ -128,8 +161,8 @@
 		Annual (Word 2010. Doesn't work well for this report)
 		Austere (Word 2010. Works)
 		Austin (Word 2010/2013/2016. Doesn't work in 2013 or 2016, mostly 
-		works in 2010 but Subtitle/Subject & Author fields need to be moved 
-		after title box is moved up)
+		works in 2010, but Subtitle/Subject & Author fields need moving after the 
+		title box is moved up)
 		Banded (Word 2013/2016. Works)
 		Conservative (Word 2010. Works)
 		Contrast (Word 2010. Works)
@@ -144,16 +177,16 @@
 		Ion (Light) (Word 2013/2016. Top date doesn't fit; box needs to be 
 		manually resized or font changed to 8 point)
 		Mod (Word 2010. Works)
-		Motion (Word 2010/2013/2016. Works if top date is manually changed to 
+		Motion (Word 2010/2013/2016. Works if the top date is manually changed to 
 		36 point)
-		Newsprint (Word 2010. Works but date is not populated)
+		Newsprint (Word 2010. Works but the date is not populated)
 		Perspective (Word 2010. Works)
 		Pinstripes (Word 2010. Works)
 		Puzzle (Word 2010. Top date doesn't fit; box needs to be manually 
 		resized or font changed to 14 point)
 		Retrospect (Word 2013/2016. Works)
 		Semaphore (Word 2013/2016. Works)
-		Sideline (Word 2010/2013/2016. Doesn't work in 2013 or 2016, works in 
+		Sideline (Word 2010/2013/2016. Doesn't work in 2013 or 2016. Works in 
 		2010)
 		Slice (Dark) (Word 2013/2016. Doesn't work)
 		Slice (Light) (Word 2013/2016. Doesn't work)
@@ -166,39 +199,11 @@
 	The default value is Sideline.
 	This parameter has an alias of CP.
 	This parameter is only valid with the MSWORD and PDF output parameters.
-.PARAMETER Dev
-	Clears errors at the beginning of the script.
-	Outputs all errors to a text file at the end of the script.
-	
-	This is used when the script developer requests more troubleshooting data.
-	The text file is placed in the same folder from where the script is run.
-	
-	This parameter is disabled by default.
-.PARAMETER Folder
-	Specifies the optional output folder to save the output report. 
-.PARAMETER From
-	Specifies the username for the From email address.
-	
-	If SmtpServer or To are used, this is a required parameter.
-.PARAMETER Log
-	Generates a log file for troubleshooting.
-.PARAMETER ScriptInfo
-	Outputs information about the script to a text file.
-	The text file is placed in the same folder from where the script is run.
-	
-	This parameter is disabled by default.
-	This parameter has an alias of SI.
-.PARAMETER ServerName
-	Specifies which RAS server to use to run the script against.
-	
-	ServerName can be entered as the NetBIOS name, FQDN, localhost or IP Address.
-	
-	If entered as localhost, the actual computer name is determined and used.
-	
-	If entered as an IP address, an attempt is made to determine and use the actual 
-	computer name.
-	
-	Default value is LocalHost
+.PARAMETER UserName
+	Username to use for the Cover Page and Footer.
+	The default value is contained in $env:username
+	This parameter has an alias of UN.
+	This parameter is only valid with the MSWORD and PDF output parameters.
 .PARAMETER SmtpPort
 	Specifies the SMTP port for the SmtpServer. 
 	The default is 25.
@@ -206,19 +211,14 @@
 	Specifies the optional email server to send the output report(s). 
 	
 	If From or To are used, this is a required parameter.
+.PARAMETER From
+	Specifies the username for the From email address.
+	
+	If SmtpServer or To are used, this is a required parameter.
 .PARAMETER To
 	Specifies the username for the To email address.
 	
 	If SmtpServer or From are used, this is a required parameter.
-.PARAMETER User
-	Username to use for the connection to the RAS server.
-
-	Default value is contained in $env:username
-.PARAMETER UserName
-	Username to use for the Cover Page and Footer.
-	The default value is contained in $env:username
-	This parameter has an alias of UN.
-	This parameter is only valid with the MSWORD and PDF output parameters.
 .PARAMETER UseSSL
 	Specifies whether to use SSL for the SmtpServer.
 	The default is False.
@@ -249,16 +249,11 @@
 		Carl Webster for the User Name (alias UN).
 
 	Outputs to PDF.
-	Prompts for credentials for the LocalHost RAS Server.
+	Prompts for credentials for the Localhost RAS Server.
 .EXAMPLE
-	PS C:\PSScript .\RAS_Inventory_V1.ps1 -CompanyName "Sherlock Holmes 
-	Consulting"
-	-CoverPage Exposure 
-	-UserName "Dr. Watson"
-	-CompanyAddress "221B Baker Street, London, England"
-	-CompanyFax "+44 1753 276600"
-	-CompanyPhone "+44 1753 276200"
-	-MSWord
+	PS C:\PSScript .\RAS_Inventory_V1.ps1 -CompanyName "Sherlock Holmes Consulting"
+	-CoverPage Exposure -UserName "Dr. Watson" -CompanyAddress "221B Baker Street, London, 
+	England" -CompanyFax "+44 1753 276600" -CompanyPhone "+44 1753 276200" -MSWord
 	
 	Will use:
 		Sherlock Holmes Consulting for the Company Name.
@@ -271,11 +266,8 @@
 	Outputs to Microsoft Word.
 	Prompts for credentials for the LocalHost RAS Server.
 .EXAMPLE
-	PS C:\PSScript .\RAS_Inventory_V1.ps1 -CompanyName "Sherlock Holmes 
-	Consulting"
-	-CoverPage Facet 
-	-UserName "Dr. Watson"
-	-CompanyEmail SuperSleuth@SherlockHolmes.com
+	PS C:\PSScript .\RAS_Inventory_V1.ps1 -CompanyName "Sherlock Holmes Consulting"
+	-CoverPage Facet -UserName "Dr. Watson" -CompanyEmail SuperSleuth@SherlockHolmes.com
 	-PDF
 
 	Will use:
@@ -287,110 +279,96 @@
 	Outputs to PDF.
 	Prompts for credentials for the LocalHost RAS Server.
 .EXAMPLE
-	PS C:\PSScript > .\RAS_Inventory_V1.ps1 
-	-SmtpServer mail.domain.tld
-	-From XDAdmin@domain.tld 
-	-To ITGroup@domain.tld	
-	-Text
+    PS C:\PSScript >.\RAS_Inventory_V1.ps1 -SmtpServer mail.domain.tld -From 
+    XDAdmin@domain.tld -To ITGroup@domain.tld -Text
 
-	The script will use the email server mail.domain.tld, sending from XDAdmin@domain.tld, 
-	sending to ITGroup@domain.tld.
+    The script uses the email server mail.domain.tld, sending from XDAdmin@domain.tld,
+    sending to ITGroup@domain.tld.
 
-	The script will use the default SMTP port 25 and will not use SSL.
+    The script uses the default SMTP port 25 and does not use SSL.
 
-	If the current user's credentials are not valid to send email, 
-	the user will be prompted to enter valid credentials.
+    If the current user's credentials are not valid to send an email, the script prompts 
+    the user to enter valid credentials.
 
-	Outputs to a text file.
-	Prompts for credentials for the LocalHost RAS Server.
+    Outputs to a text file.
+    Prompts for credentials for the Localhost RAS Server.
 .EXAMPLE
-	PS C:\PSScript > .\RAS_Inventory_V1.ps1 
-	-SmtpServer mailrelay.domain.tld
-	-From Anonymous@domain.tld 
-	-To ITGroup@domain.tld	
+    PS C:\PSScript >.\RAS_Inventory_V1.ps1 -SmtpServer mailrelay.domain.tld -From 
+    Anonymous@domain.tld -To ITGroup@domain.tld
 
-	***SENDING UNAUTHENTICATED EMAIL***
+    ***SENDING UNAUTHENTICATED EMAIL***
 
-	The script will use the email server mailrelay.domain.tld, sending from 
-	anonymous@domain.tld, sending to ITGroup@domain.tld.
+    The script uses the email server mailrelay.domain.tld, sending from
+    anonymous@domain.tld, sending to ITGroup@domain.tld.
 
-	To send unauthenticated email using an email relay server requires the From email account 
-	to use the name Anonymous.
+    To send an unauthenticated email using an email relay server requires the From email 
+    account to use the name Anonymous.
 
-	The script will use the default SMTP port 25 and will not use SSL.
-	
-	***GMAIL/G SUITE SMTP RELAY***
-	https://support.google.com/a/answer/2956491?hl=en
-	https://support.google.com/a/answer/176600?hl=en
+    The script uses the default SMTP port 25 and does not use SSL.
 
-	To send email using a Gmail or g-suite account, you may have to turn ON
-	the "Less secure app access" option on your account.
-	***GMAIL/G SUITE SMTP RELAY***
+    ***GMAIL/G SUITE SMTP RELAY***
+    https://support.google.com/a/answer/2956491?hl=en
+    https://support.google.com/a/answer/176600?hl=en
 
-	The script will generate an anonymous secure password for the anonymous@domain.tld 
-	account.
+    To send an email using a Gmail or g-suite account, you may have to turn ON the "Less 
+    secure app access" option on your account.
 
-	Outputs, by default, to HTML.
-	Prompts for credentials for the LocalHost RAS Server.
+    ***GMAIL/G SUITE SMTP RELAY***
+
+    The script generates an anonymous, secure password for the anonymous@domain.tld
+    account.
+
+    Outputs, by default, to HTML.
+    Prompts for credentials for the LocalHost RAS Server.
 .EXAMPLE
-	PS C:\PSScript > .\RAS_Inventory_V1.ps1 
-	-SmtpServer labaddomain-com.mail.protection.outlook.com
-	-UseSSL
-	-From SomeEmailAddress@labaddomain.com 
-	-To ITGroupDL@labaddomain.com	
+    PS C:\PSScript >.\RAS_Inventory_V1.ps1 -SmtpServer 
+    labaddomain-com.mail.protection.outlook.com -UseSSL -From 
+    SomeEmailAddress@labaddomain.com -To ITGroupDL@labaddomain.com
 
-	***OFFICE 365 Example***
+    ***OFFICE 365 Example***
+    https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-office-3
 
-	https://docs.microsoft.com/en-us/exchange/mail-flow-best-practices/how-to-set-up-a-multifunction-device-or-application-to-send-email-using-office-3
-	
-	This uses Option 2 from the above link.
-	
-	***OFFICE 365 Example***
+    This uses Option 2 from the above link.
 
-	The script will use the email server labaddomain-com.mail.protection.outlook.com, 
-	sending from SomeEmailAddress@labaddomain.com, sending to ITGroupDL@labaddomain.com.
+    ***OFFICE 365 Example***
 
-	The script will use the default SMTP port 25 and will use SSL.
+    The script uses the email server labaddomain-com.mail.protection.outlook.com,
+    sending from SomeEmailAddress@labaddomain.com, and sending to 
+	ITGroupDL@labaddomain.com.
 
-	Outputs, by default, to HTML.
-	Prompts for credentials for the LocalHost RAS Server.
+    The script uses the default SMTP port 25 and SSL.
+
+    Outputs, by default, to HTML.
+    Prompts for credentials for the LocalHost RAS Server.
 .EXAMPLE
-	PS C:\PSScript > .\RAS_Inventory_V1.ps1 
-	-SmtpServer smtp.office365.com 
-	-SmtpPort 587
-	-UseSSL 
-	-From Webster@CarlWebster.com 
-	-To ITGroup@CarlWebster.com	
+    PS C:\PSScript >.\RAS_Inventory_V1.ps1 -SmtpServer smtp.office365.com -SmtpPort 587 
+    -UseSSL -From Webster@CarlWebster.com -To ITGroup@CarlWebster.com
 
-	The script will use the email server smtp.office365.com on port 587 using SSL, 
-	sending from webster@carlwebster.com, sending to ITGroup@carlwebster.com.
+    The script uses the email server smtp.office365.com on port 587 using SSL, sending from 
+    webster@carlwebster.com, and sending to ITGroup@carlwebster.com.
 
-	If the current user's credentials are not valid to send email, 
-	the user will be prompted to enter valid credentials.
+    If the current user's credentials are not valid to send an email, the script prompts 
+    the user to enter valid credentials.
 
-	Outputs, by default, to HTML.
-	Prompts for credentials for the LocalHost RAS Server.
+    Outputs, by default, to HTML.
+    Prompts for credentials for the LocalHost RAS Server.
 .EXAMPLE
-	PS C:\PSScript > .\RAS_Inventory_V1.ps1 
-	-SmtpServer smtp.gmail.com 
-	-SmtpPort 587
-	-UseSSL 
-	-From Webster@CarlWebster.com 
-	-To ITGroup@CarlWebster.com	
+    PS C:\PSScript >.\RAS_Inventory_V1.ps1 -SmtpServer smtp.gmail.com -SmtpPort 587 
+    -UseSSL -From Webster@CarlWebster.com -To ITGroup@CarlWebster.com
 
-	*** NOTE ***
-	To send email using a Gmail or g-suite account, you may have to turn ON
-	the "Less secure app access" option on your account.
-	*** NOTE ***
-	
-	The script will use the email server smtp.gmail.com on port 587 using SSL, 
-	sending from webster@gmail.com, sending to ITGroup@carlwebster.com.
+    *** NOTE ***
+    To send an email using a Gmail or g-suite account, you may have to turn ON the "Less 
+    secure app access" option on your account.
+    *** NOTE ***
 
-	If the current user's credentials are not valid to send email, 
-	the user will be prompted to enter valid credentials.
+    The script uses the email server smtp.gmail.com on port 587 using SSL, sending from 
+    webster@gmail.com, and sending to ITGroup@carlwebster.com.
 
-	Outputs, by default, to HTML.
-	Prompts for credentials for the LocalHost RAS Server.
+    If the current user's credentials are not valid to send an email, the script prompts 
+    the user to enter valid credentials.
+
+    Outputs, by default, to HTML.
+    Prompts for credentials for the LocalHost RAS Server.
 .INPUTS
 	None.  You cannot pipe objects to this script.
 .OUTPUTS
@@ -398,9 +376,9 @@
 	text document.
 .NOTES
 	NAME: RAS_Inventory_V1.ps1
-	VERSION: 1.00
+	VERSION: 1.01
 	AUTHOR: Carl Webster
-	LASTEDIT: August 4, 2020
+	LASTEDIT: April 19, 2021
 #>
 
 
@@ -409,21 +387,40 @@
 
 Param(
 	[parameter(Mandatory=$False)] 
+	[string]$ServerName="LocalHost",
+	
+	[parameter(Mandatory=$False)] 
+	[string]$User=$env:username,
+	
+	[parameter(Mandatory=$False)] 
 	[Switch]$HTML=$False,
 
+	[parameter(Mandatory=$False)] 
+	[Switch]$Text=$False,
+
+	[parameter(Mandatory=$False)] 
+	[string]$Folder="",
+	
+	[parameter(Mandatory=$False)] 
+	[Alias("ADT")]
+	[Switch]$AddDateTime=$False,
+	
+	[parameter(Mandatory=$False)] 
+	[Switch]$Dev=$False,
+	
+	[parameter(Mandatory=$False)] 
+	[Switch]$Log=$False,
+	
+	[parameter(Mandatory=$False)] 
+	[Alias("SI")]
+	[Switch]$ScriptInfo=$False,
+	
 	[parameter(ParameterSetName="WordPDF",Mandatory=$False)] 
 	[Switch]$MSWord=$False,
 
 	[parameter(ParameterSetName="WordPDF",Mandatory=$False)] 
 	[Switch]$PDF=$False,
 
-	[parameter(Mandatory=$False)] 
-	[Switch]$Text=$False,
-
-	[parameter(Mandatory=$False)] 
-	[Alias("ADT")]
-	[Switch]$AddDateTime=$False,
-	
 	[parameter(ParameterSetName="WordPDF",Mandatory=$False)] 
 	[Alias("CA")]
 	[ValidateNotNullOrEmpty()]
@@ -454,25 +451,11 @@ Param(
 	[ValidateNotNullOrEmpty()]
 	[string]$CoverPage="Sideline", 
 
-	[parameter(Mandatory=$False)] 
-	[Switch]$Dev=$False,
-	
-	[parameter(Mandatory=$False)] 
-	[string]$Folder="",
-	
-	[parameter(Mandatory=$False)] 
-	[string]$From="",
+	[parameter(ParameterSetName="WordPDF",Mandatory=$False)] 
+	[Alias("UN")]
+	[ValidateNotNullOrEmpty()]
+	[string]$UserName=$env:username,
 
-	[parameter(Mandatory=$False)] 
-	[Switch]$Log=$False,
-	
-	[parameter(Mandatory=$False)] 
-	[Alias("SI")]
-	[Switch]$ScriptInfo=$False,
-	
-	[parameter(Mandatory=$False)] 
-	[string]$ServerName="LocalHost",
-	
 	[parameter(Mandatory=$False)] 
 	[int]$SmtpPort=25,
 
@@ -480,12 +463,7 @@ Param(
 	[string]$SmtpServer="",
 
 	[parameter(Mandatory=$False)] 
-	[string]$User=$env:username,
-	
-	[parameter(ParameterSetName="WordPDF",Mandatory=$False)] 
-	[Alias("UN")]
-	[ValidateNotNullOrEmpty()]
-	[string]$UserName=$env:username,
+	[string]$From="",
 
 	[parameter(Mandatory=$False)] 
 	[string]$To="",
@@ -503,6 +481,17 @@ Param(
 
 #Version 1.0 released to the community on 5-August-2020
 #
+#Version 1.01 19-Apr-2021
+#	Added a message to the error message for the missing RAS module
+#		Added a link to the V1 ReadMe file
+#	Added the missing License section for published RDSH applications to Text and HTML output
+#	Changed all Write-Verbose statements from Get-Date to Get-Date -Format G as requested by Guy Leech
+#	Changed the font size of Word/PDF tables from 11 to 10 to prevent most word wrapping to multiple lines
+#	Fixed several invalid $Null comparisons
+#	Reorder Parameters in an order recommended by Guy Leech
+#	Updated Function SetWordCellFormat to the latest version
+#	Updated the ReadMe file
+
 
 Set-StrictMode -Version Latest
 
@@ -517,24 +506,24 @@ If($MSWord -eq $False -and $PDF -eq $False -and $Text -eq $False -and $HTML -eq 
 
 If($MSWord)
 {
-	Write-Verbose "$(Get-Date): MSWord is set"
+	Write-Verbose "$(Get-Date -Format G): MSWord is set"
 }
 If($PDF)
 {
-	Write-Verbose "$(Get-Date): PDF is set"
+	Write-Verbose "$(Get-Date -Format G): PDF is set"
 }
 If($Text)
 {
-	Write-Verbose "$(Get-Date): Text is set"
+	Write-Verbose "$(Get-Date -Format G): Text is set"
 }
 If($HTML)
 {
-	Write-Verbose "$(Get-Date): HTML is set"
+	Write-Verbose "$(Get-Date -Format G): HTML is set"
 }
 
 If($Folder -ne "")
 {
-	Write-Verbose "$(Get-Date): Testing folder path"
+	Write-Verbose "$(Get-Date -Format G): Testing folder path"
 	#does it exist
 	If(Test-Path $Folder -EA 0)
 	{
@@ -542,7 +531,7 @@ If($Folder -ne "")
 		If(Test-Path $Folder -pathType Container -EA 0)
 		{
 			#it exists and it is a folder
-			Write-Verbose "$(Get-Date): Folder path $Folder exists and is a folder"
+			Write-Verbose "$(Get-Date -Format G): Folder path $Folder exists and is a folder"
 		}
 		Else
 		{
@@ -598,12 +587,12 @@ If($Log)
 	try 
 	{
 		Start-Transcript -Path $Script:LogPath -Force -Verbose:$false | Out-Null
-		Write-Verbose "$(Get-Date): Transcript/log started at $Script:LogPath"
+		Write-Verbose "$(Get-Date -Format G): Transcript/log started at $Script:LogPath"
 		$Script:StartLog = $true
 	} 
 	catch 
 	{
-		Write-Verbose "$(Get-Date): Transcript/log failed at $Script:LogPath"
+		Write-Verbose "$(Get-Date -Format G): Transcript/log failed at $Script:LogPath"
 		$Script:StartLog = $false
 	}
 }
@@ -696,21 +685,23 @@ If($MSWord -or $PDF)
 	#the following values were attained from 
 	#http://groovy.codehaus.org/modules/scriptom/1.6.0/scriptom-office-2K3-tlb/apidocs/
 	#http://msdn.microsoft.com/en-us/library/office/aa211923(v=office.11).aspx
-	[int]$wdAlignPageNumberRight = 2
-	[long]$wdColorGray15 = 14277081
-	#[long]$wdColorGray05 = 15987699 
-	[int]$wdMove = 0
-	[int]$wdSeekMainDocument = 0
-	[int]$wdSeekPrimaryFooter = 4
-	[int]$wdStory = 6
-	#[int]$wdColorRed = 255
-	#[int]$wdColorBlack = 0
-	[int]$wdWord2007 = 12
-	[int]$wdWord2010 = 14
-	[int]$wdWord2013 = 15
-	[int]$wdWord2016 = 16
+	[int]$wdAlignPageNumberRight  = 2
+	[int]$wdMove                  = 0
+	[int]$wdSeekMainDocument      = 0
+	[int]$wdSeekPrimaryFooter     = 4
+	[int]$wdStory                 = 6
+	[int]$wdColorBlack            = 0
+	[int]$wdColorGray05           = 15987699 
+	[int]$wdColorGray15           = 14277081
+	[int]$wdColorRed              = 255
+	[int]$wdColorWhite            = 16777215
+	[int]$wdColorYellow           = 65535
+	[int]$wdWord2007              = 12
+	[int]$wdWord2010              = 14
+	[int]$wdWord2013              = 15
+	[int]$wdWord2016              = 16
 	[int]$wdFormatDocumentDefault = 16
-	[int]$wdFormatPDF = 17
+	[int]$wdFormatPDF             = 17
 	#http://blogs.technet.com/b/heyscriptingguy/archive/2006/03/01/how-can-i-right-align-a-single-column-in-a-word-table.aspx
 	#http://msdn.microsoft.com/en-us/library/office/ff835817%28v=office.15%29.aspx
 	#[int]$wdAlignParagraphLeft = 0
@@ -1365,7 +1356,7 @@ Function validObject( [object] $object, [string] $topLevel )
 
 Function SetupWord
 {
-	Write-Verbose "$(Get-Date): Setting up Word"
+	Write-Verbose "$(Get-Date -Format G): Setting up Word"
     
 	If(!$AddDateTime)
 	{
@@ -1385,7 +1376,7 @@ Function SetupWord
 	}
 
 	# Setup word for output
-	Write-Verbose "$(Get-Date): Create Word comObject."
+	Write-Verbose "$(Get-Date -Format G): Create Word comObject."
 	$Script:Word = New-Object -comobject "Word.Application" -EA 0 4>$Null
 	
 	If(!$? -or $Null -eq $Script:Word)
@@ -1403,7 +1394,7 @@ Function SetupWord
 		AbortScript
 	}
 
-	Write-Verbose "$(Get-Date): Determine Word language value"
+	Write-Verbose "$(Get-Date -Format G): Determine Word language value"
 	If( ( validStateProp $Script:Word Language Value__ ) )
 	{
 		[int]$Script:WordLanguageValue = [int]$Script:Word.Language.Value__
@@ -1426,7 +1417,7 @@ Function SetupWord
 		"
 		AbortScript
 	}
-	Write-Verbose "$(Get-Date): Word language value is $($Script:WordLanguageValue)"
+	Write-Verbose "$(Get-Date -Format G): Word language value is $($Script:WordLanguageValue)"
 	
 	$Script:WordCultureCode = GetCulture $Script:WordLanguageValue
 	
@@ -1491,7 +1482,7 @@ Function SetupWord
 	#only validate CompanyName if the field is blank
 	If([String]::IsNullOrEmpty($CompanyName))
 	{
-		Write-Verbose "$(Get-Date): Company name is blank. Retrieve company name from registry."
+		Write-Verbose "$(Get-Date -Format G): Company name is blank. Retrieve company name from registry."
 		$TmpName = ValidateCompanyName
 		
 		If([String]::IsNullOrEmpty($TmpName))
@@ -1511,7 +1502,7 @@ Function SetupWord
 		Else
 		{
 			$Script:CoName = $TmpName
-			Write-Verbose "$(Get-Date): Updated company name to $($Script:CoName)"
+			Write-Verbose "$(Get-Date -Format G): Updated company name to $($Script:CoName)"
 		}
 	}
 	Else
@@ -1521,7 +1512,7 @@ Function SetupWord
 
 	If($Script:WordCultureCode -ne "en-")
 	{
-		Write-Verbose "$(Get-Date): Check Default Cover Page for $($WordCultureCode)"
+		Write-Verbose "$(Get-Date -Format G): Check Default Cover Page for $($WordCultureCode)"
 		[bool]$CPChanged = $False
 		Switch ($Script:WordCultureCode)
 		{
@@ -1624,19 +1615,19 @@ Function SetupWord
 
 		If($CPChanged)
 		{
-			Write-Verbose "$(Get-Date): Changed Default Cover Page from Sideline to $($CoverPage)"
+			Write-Verbose "$(Get-Date -Format G): Changed Default Cover Page from Sideline to $($CoverPage)"
 		}
 	}
 
-	Write-Verbose "$(Get-Date): Validate cover page $($CoverPage) for culture code $($Script:WordCultureCode)"
+	Write-Verbose "$(Get-Date -Format G): Validate cover page $($CoverPage) for culture code $($Script:WordCultureCode)"
 	[bool]$ValidCP = $False
 	
 	$ValidCP = ValidateCoverPage $Script:WordVersion $CoverPage $Script:WordCultureCode
 	
 	If(!$ValidCP)
 	{
-		Write-Verbose "$(Get-Date): Word language value $($Script:WordLanguageValue)"
-		Write-Verbose "$(Get-Date): Culture code $($Script:WordCultureCode)"
+		Write-Verbose "$(Get-Date -Format G): Word language value $($Script:WordLanguageValue)"
+		Write-Verbose "$(Get-Date -Format G): Culture code $($Script:WordCultureCode)"
 		Write-Error "
 		`n`n
 		`t`t
@@ -1653,7 +1644,7 @@ Function SetupWord
 
 	#http://jdhitsolutions.com/blog/2012/05/san-diego-2012-powershell-deep-dive-slides-and-demos/
 	#using Jeff's Demo-WordReport.ps1 file for examples
-	Write-Verbose "$(Get-Date): Load Word Templates"
+	Write-Verbose "$(Get-Date -Format G): Load Word Templates"
 
 	[bool]$Script:CoverPagesExist = $False
 	[bool]$BuildingBlocksExist = $False
@@ -1662,7 +1653,7 @@ Function SetupWord
 	#word 2010/2013/2016
 	$BuildingBlocksCollection = $Script:Word.Templates | Where-Object{$_.name -eq "Built-In Building Blocks.dotx"}
 
-	Write-Verbose "$(Get-Date): Attempt to load cover page $($CoverPage)"
+	Write-Verbose "$(Get-Date -Format G): Attempt to load cover page $($CoverPage)"
 	$part = $Null
 
 	$BuildingBlocksCollection | 
@@ -1695,16 +1686,16 @@ Function SetupWord
 
 	If(!$Script:CoverPagesExist)
 	{
-		Write-Verbose "$(Get-Date): Cover Pages are not installed or the Cover Page $($CoverPage) does not exist."
+		Write-Verbose "$(Get-Date -Format G): Cover Pages are not installed or the Cover Page $($CoverPage) does not exist."
 		Write-Warning "Cover Pages are not installed or the Cover Page $($CoverPage) does not exist."
 		Write-Warning "This report will not have a Cover Page."
 	}
 
-	Write-Verbose "$(Get-Date): Create empty word doc"
+	Write-Verbose "$(Get-Date -Format G): Create empty word doc"
 	$Script:Doc = $Script:Word.Documents.Add()
 	If($Null -eq $Script:Doc)
 	{
-		Write-Verbose "$(Get-Date): "
+		Write-Verbose "$(Get-Date -Format G): "
 		Write-Error "
 		`n`n
 		`t`t
@@ -1720,7 +1711,7 @@ Function SetupWord
 	$Script:Selection = $Script:Word.Selection
 	If($Null -eq $Script:Selection)
 	{
-		Write-Verbose "$(Get-Date): "
+		Write-Verbose "$(Get-Date -Format G): "
 		Write-Error "
 		`n`n
 		`t`t
@@ -1738,7 +1729,7 @@ Function SetupWord
 	$Script:Word.ActiveDocument.DefaultTabStop = 36
 
 	#Disable Spell and Grammar Check to resolve issue and improve performance (from Pat Coughlin)
-	Write-Verbose "$(Get-Date): Disable grammar and spell checking"
+	Write-Verbose "$(Get-Date -Format G): Disable grammar and spell checking"
 	#bug reported 1-Apr-2014 by Tim Mangan
 	#save current options first before turning them off
 	$Script:CurrentGrammarOption = $Script:Word.Options.CheckGrammarAsYouType
@@ -1749,17 +1740,17 @@ Function SetupWord
 	If($BuildingBlocksExist)
 	{
 		#insert new page, getting ready for table of contents
-		Write-Verbose "$(Get-Date): Insert new page, getting ready for table of contents"
+		Write-Verbose "$(Get-Date -Format G): Insert new page, getting ready for table of contents"
 		$part.Insert($Script:Selection.Range,$True) | Out-Null
 		$Script:Selection.InsertNewPage()
 
 		#table of contents
-		Write-Verbose "$(Get-Date): Table of Contents - $($Script:MyHash.Word_TableOfContents)"
+		Write-Verbose "$(Get-Date -Format G): Table of Contents - $($Script:MyHash.Word_TableOfContents)"
 		$toc = $BuildingBlocks.BuildingBlockEntries.Item($Script:MyHash.Word_TableOfContents)
 		If($Null -eq $toc)
 		{
-			Write-Verbose "$(Get-Date): "
-			Write-Verbose "$(Get-Date): Table of Content - $($Script:MyHash.Word_TableOfContents) could not be retrieved."
+			Write-Verbose "$(Get-Date -Format G): "
+			Write-Verbose "$(Get-Date -Format G): Table of Content - $($Script:MyHash.Word_TableOfContents) could not be retrieved."
 			Write-Warning "This report will not have a Table of Contents."
 		}
 		Else
@@ -1769,16 +1760,16 @@ Function SetupWord
 	}
 	Else
 	{
-		Write-Verbose "$(Get-Date): Table of Contents are not installed."
+		Write-Verbose "$(Get-Date -Format G): Table of Contents are not installed."
 		Write-Warning "Table of Contents are not installed so this report will not have a Table of Contents."
 	}
 
 	#set the footer
-	Write-Verbose "$(Get-Date): Set the footer"
+	Write-Verbose "$(Get-Date -Format G): Set the footer"
 	[string]$footertext = "Report created by $username"
 
 	#get the footer
-	Write-Verbose "$(Get-Date): Get the footer and format font"
+	Write-Verbose "$(Get-Date -Format G): Get the footer and format font"
 	$Script:Doc.ActiveWindow.ActivePane.view.SeekView = $wdSeekPrimaryFooter
 	#get the footer and format font
 	$footers = $Script:Doc.Sections.Last.Footers
@@ -1792,15 +1783,15 @@ Function SetupWord
 			$footer.range.Font.Bold = $True
 		}
 	} #end ForEach
-	Write-Verbose "$(Get-Date): Footer text"
+	Write-Verbose "$(Get-Date -Format G): Footer text"
 	$Script:Selection.HeaderFooter.Range.Text = $footerText
 
 	#add page numbering
-	Write-Verbose "$(Get-Date): Add page numbering"
+	Write-Verbose "$(Get-Date -Format G): Add page numbering"
 	$Script:Selection.HeaderFooter.PageNumbers.Add($wdAlignPageNumberRight) | Out-Null
 
 	FindWordDocumentEnd
-	Write-Verbose "$(Get-Date):"
+	Write-Verbose "$(Get-Date -Format G):"
 	#end of Jeff Hicks 
 }
 
@@ -1813,7 +1804,7 @@ Function UpdateDocumentProperties
 	{
 		If($Script:CoverPagesExist)
 		{
-			Write-Verbose "$(Get-Date): Set Cover Page Properties"
+			Write-Verbose "$(Get-Date -Format G): Set Cover Page Properties"
 			#8-Jun-2017 put these 4 items in alpha order
             Set-DocumentProperty -Document $Script:Doc -DocProperty Author -Value $UserName
             Set-DocumentProperty -Document $Script:Doc -DocProperty Company -Value $Script:CoName
@@ -1865,7 +1856,7 @@ Function UpdateDocumentProperties
 			[string]$abstract = (Get-Date -Format d).ToString()
 			$ab.Text = $abstract
 
-			Write-Verbose "$(Get-Date): Update the Table of Contents"
+			Write-Verbose "$(Get-Date -Format G): Update the Table of Contents"
 			#update the Table of Contents
 			$Script:Doc.TablesOfContents.item(1).Update()
 			$cp = $Null
@@ -2573,7 +2564,7 @@ Function FormatHTMLTable
 #region other HTML functions
 Function SetupHTML
 {
-	Write-Verbose "$(Get-Date): Setting up HTML"
+	Write-Verbose "$(Get-Date -Format G): Setting up HTML"
 	If(!$AddDateTime)
 	{
 		[string]$Script:HtmlFileName = "$($Script:pwdpath)\$($OutputFileName).html"
@@ -2915,7 +2906,7 @@ Function SetWordCellFormat
 		# Font size
 		[Parameter()] [ValidateNotNullOrEmpty()] [int] $Size = 0,
 		# Cell background color
-		[Parameter()] [AllowNull()] $BackgroundColor = $Null,
+		[Parameter()] [AllowNull()] [int]$BackgroundColor = $Null,
 		# Force solid background color
 		[Switch] $Solid,
 		[Switch] $Bold,
@@ -3047,7 +3038,7 @@ Function SaveandCloseDocumentandShutdownWord
 	$Script:Word.Options.CheckGrammarAsYouType = $Script:CurrentGrammarOption
 	$Script:Word.Options.CheckSpellingAsYouType = $Script:CurrentSpellingOption
 
-	Write-Verbose "$(Get-Date): Save and Close document and Shutdown Word"
+	Write-Verbose "$(Get-Date -Format G): Save and Close document and Shutdown Word"
 	If($Script:WordVersion -eq $wdWord2010)
 	{
 		#the $saveFormat below passes StrictMode 2
@@ -3056,18 +3047,18 @@ Function SaveandCloseDocumentandShutdownWord
 		#http://msdn.microsoft.com/en-us/library/microsoft.office.interop.word.wdsaveformat(v=office.14).aspx
 		If($PDF)
 		{
-			Write-Verbose "$(Get-Date): Saving as DOCX file first before saving to PDF"
+			Write-Verbose "$(Get-Date -Format G): Saving as DOCX file first before saving to PDF"
 		}
 		Else
 		{
-			Write-Verbose "$(Get-Date): Saving DOCX file"
+			Write-Verbose "$(Get-Date -Format G): Saving DOCX file"
 		}
-		Write-Verbose "$(Get-Date): Running $($Script:WordProduct) and detected operating system $($Script:RunningOS)"
+		Write-Verbose "$(Get-Date -Format G): Running $($Script:WordProduct) and detected operating system $($Script:RunningOS)"
 		$saveFormat = [Enum]::Parse([Microsoft.Office.Interop.Word.WdSaveFormat], "wdFormatDocumentDefault")
 		$Script:Doc.SaveAs([REF]$Script:WordFileName, [ref]$SaveFormat)
 		If($PDF)
 		{
-			Write-Verbose "$(Get-Date): Now saving as PDF"
+			Write-Verbose "$(Get-Date -Format G): Now saving as PDF"
 			$saveFormat = [Enum]::Parse([Microsoft.Office.Interop.Word.WdSaveFormat], "wdFormatPDF")
 			$Script:Doc.SaveAs([REF]$Script:PDFFileName, [ref]$saveFormat)
 		}
@@ -3076,25 +3067,25 @@ Function SaveandCloseDocumentandShutdownWord
 	{
 		If($PDF)
 		{
-			Write-Verbose "$(Get-Date): Saving as DOCX file first before saving to PDF"
+			Write-Verbose "$(Get-Date -Format G): Saving as DOCX file first before saving to PDF"
 		}
 		Else
 		{
-			Write-Verbose "$(Get-Date): Saving DOCX file"
+			Write-Verbose "$(Get-Date -Format G): Saving DOCX file"
 		}
-		Write-Verbose "$(Get-Date): Running $($Script:WordProduct) and detected operating system $($Script:RunningOS)"
+		Write-Verbose "$(Get-Date -Format G): Running $($Script:WordProduct) and detected operating system $($Script:RunningOS)"
 		$Script:Doc.SaveAs2([REF]$Script:WordFileName, [ref]$wdFormatDocumentDefault)
 		If($PDF)
 		{
-			Write-Verbose "$(Get-Date): Now saving as PDF"
+			Write-Verbose "$(Get-Date -Format G): Now saving as PDF"
 			$Script:Doc.SaveAs([REF]$Script:PDFFileName, [ref]$wdFormatPDF)
 		}
 	}
 
-	Write-Verbose "$(Get-Date): Closing Word"
+	Write-Verbose "$(Get-Date -Format G): Closing Word"
 	$Script:Doc.Close()
 	$Script:Word.Quit()
-	Write-Verbose "$(Get-Date): System Cleanup"
+	Write-Verbose "$(Get-Date -Format G): System Cleanup"
 	[System.Runtime.Interopservices.Marshal]::ReleaseComObject($Script:Word) | Out-Null
 	Remove-Variable -Name word -Scope Script 4>$Null
 	Remove-Variable -Name Doc  -Scope Script 4>$Null
@@ -3112,14 +3103,14 @@ Function SaveandCloseDocumentandShutdownWord
 	$wordprocess = (Get-Process 'WinWord' -ea 0) | Where-Object {$_.SessionId -eq $SessionID}
 	If($null -ne $wordprocess -and $wordprocess.Id -gt 0)
 	{
-		Write-Verbose "$(Get-Date): WinWord process is still running. Attempting to stop WinWord process # $($wordprocess.Id)"
+		Write-Verbose "$(Get-Date -Format G): WinWord process is still running. Attempting to stop WinWord process # $($wordprocess.Id)"
 		Stop-Process $wordprocess.Id -EA 0
 	}
 }
 
 Function SetupText
 {
-	Write-Verbose "$(Get-Date): Setting up Text"
+	Write-Verbose "$(Get-Date -Format G): Setting up Text"
 	[System.Text.StringBuilder] $Script:Output = New-Object System.Text.StringBuilder( 16384 )
 
 	If(!$AddDateTime)
@@ -3134,13 +3125,13 @@ Function SetupText
 
 Function SaveandCloseTextDocument
 {
-	Write-Verbose "$(Get-Date): Saving Text file"
+	Write-Verbose "$(Get-Date -Format G): Saving Text file"
 	Write-Output $Script:Output.ToString() | Out-File $Script:TextFileName 4>$Null
 }
 
 Function SaveandCloseHTMLDocument
 {
-	Write-Verbose "$(Get-Date): Saving HTML file"
+	Write-Verbose "$(Get-Date -Format G): Saving HTML file"
 	Out-File -FilePath $Script:HtmlFileName -Append -InputObject "<p></p></body></html>" 4>$Null
 }
 
@@ -3190,7 +3181,7 @@ Function ProcessDocumentOutput
 		{
 			If(Test-Path "$($Script:WordFileName)")
 			{
-				Write-Verbose "$(Get-Date): $($Script:WordFileName) is ready for use"
+				Write-Verbose "$(Get-Date -Format G): $($Script:WordFileName) is ready for use"
 				$GotFile = $True
 			}
 			Else
@@ -3203,7 +3194,7 @@ Function ProcessDocumentOutput
 		{
 			If(Test-Path "$($Script:PDFFileName)")
 			{
-				Write-Verbose "$(Get-Date): $($Script:PDFFileName) is ready for use"
+				Write-Verbose "$(Get-Date -Format G): $($Script:PDFFileName) is ready for use"
 				$GotFile = $True
 			}
 			Else
@@ -3216,7 +3207,7 @@ Function ProcessDocumentOutput
 		{
 			If(Test-Path "$($Script:TextFileName)")
 			{
-				Write-Verbose "$(Get-Date): $($Script:TextFileName) is ready for use"
+				Write-Verbose "$(Get-Date -Format G): $($Script:TextFileName) is ready for use"
 				$GotFile = $True
 			}
 			Else
@@ -3229,7 +3220,7 @@ Function ProcessDocumentOutput
 		{
 			If(Test-Path "$($Script:HTMLFileName)")
 			{
-				Write-Verbose "$(Get-Date): $($Script:HTMLFileName) is ready for use"
+				Write-Verbose "$(Get-Date -Format G): $($Script:HTMLFileName) is ready for use"
 				$GotFile = $True
 			}
 			Else
@@ -3268,72 +3259,72 @@ Function ProcessDocumentOutput
 
 Function ShowScriptOptions
 {
-	Write-Verbose "$(Get-Date): "
-	Write-Verbose "$(Get-Date): "
-	Write-Verbose "$(Get-Date): Add DateTime         : $($AddDateTime)"
+	Write-Verbose "$(Get-Date -Format G): "
+	Write-Verbose "$(Get-Date -Format G): "
+	Write-Verbose "$(Get-Date -Format G): Add DateTime         : $($AddDateTime)"
 	If($MSWORD -or $PDF)
 	{
-		Write-Verbose "$(Get-Date): Company Name         : $($Script:CoName)"
-		Write-Verbose "$(Get-Date): Company Address      : $($CompanyAddress)"
-		Write-Verbose "$(Get-Date): Company Email        : $($CompanyEmail)"
-		Write-Verbose "$(Get-Date): Company Fax          : $($CompanyFax)"
-		Write-Verbose "$(Get-Date): Company Phone        : $($CompanyPhone)"
-		Write-Verbose "$(Get-Date): Cover Page           : $($CoverPage)"
+		Write-Verbose "$(Get-Date -Format G): Company Name         : $($Script:CoName)"
+		Write-Verbose "$(Get-Date -Format G): Company Address      : $($CompanyAddress)"
+		Write-Verbose "$(Get-Date -Format G): Company Email        : $($CompanyEmail)"
+		Write-Verbose "$(Get-Date -Format G): Company Fax          : $($CompanyFax)"
+		Write-Verbose "$(Get-Date -Format G): Company Phone        : $($CompanyPhone)"
+		Write-Verbose "$(Get-Date -Format G): Cover Page           : $($CoverPage)"
 	}
-	Write-Verbose "$(Get-Date): Dev                  : $($Dev)"
+	Write-Verbose "$(Get-Date -Format G): Dev                  : $($Dev)"
 	If($Dev)
 	{
-		Write-Verbose "$(Get-Date): DevErrorFile         : $($Script:DevErrorFile)"
+		Write-Verbose "$(Get-Date -Format G): DevErrorFile         : $($Script:DevErrorFile)"
 	}
 	If($MSWord)
 	{
-		Write-Verbose "$(Get-Date): Word FileName        : $($Script:WordFileName)"
+		Write-Verbose "$(Get-Date -Format G): Word FileName        : $($Script:WordFileName)"
 	}
 	If($HTML)
 	{
-		Write-Verbose "$(Get-Date): HTML FileName        : $($Script:HtmlFileName)"
+		Write-Verbose "$(Get-Date -Format G): HTML FileName        : $($Script:HtmlFileName)"
 	} 
 	If($PDF)
 	{
-		Write-Verbose "$(Get-Date): PDF FileName         : $($Script:PDFFileName)"
+		Write-Verbose "$(Get-Date -Format G): PDF FileName         : $($Script:PDFFileName)"
 	}
 	If($Text)
 	{
-		Write-Verbose "$(Get-Date): Text FileName        : $($Script:TextFileName)"
+		Write-Verbose "$(Get-Date -Format G): Text FileName        : $($Script:TextFileName)"
 	}
-	Write-Verbose "$(Get-Date): Folder               : $($Folder)"
-	Write-Verbose "$(Get-Date): From                 : $($From)"
-	Write-Verbose "$(Get-Date): Log                  : $($Log)"
-	Write-Verbose "$(Get-Date): RAS Version          : $($Script:RASVersion)"
-	Write-Verbose "$(Get-Date): Save As HTML         : $($HTML)"
-	Write-Verbose "$(Get-Date): Save As PDF          : $($PDF)"
-	Write-Verbose "$(Get-Date): Save As TEXT         : $($TEXT)"
-	Write-Verbose "$(Get-Date): Save As WORD         : $($MSWORD)"
-	Write-Verbose "$(Get-Date): ScriptInfo           : $($ScriptInfo)"
-	Write-Verbose "$(Get-Date): Smtp Port            : $($SmtpPort)"
-	Write-Verbose "$(Get-Date): Smtp Server          : $($SmtpServer)"
-	Write-Verbose "$(Get-Date): Title                : $($Script:Title)"
-	Write-Verbose "$(Get-Date): To                   : $($To)"
-	Write-Verbose "$(Get-Date): Use SSL              : $($UseSSL)"
-	Write-Verbose "$(Get-Date): User                 : $($Script:User)"
+	Write-Verbose "$(Get-Date -Format G): Folder               : $($Folder)"
+	Write-Verbose "$(Get-Date -Format G): From                 : $($From)"
+	Write-Verbose "$(Get-Date -Format G): Log                  : $($Log)"
+	Write-Verbose "$(Get-Date -Format G): RAS Version          : $($Script:RASVersion)"
+	Write-Verbose "$(Get-Date -Format G): Save As HTML         : $($HTML)"
+	Write-Verbose "$(Get-Date -Format G): Save As PDF          : $($PDF)"
+	Write-Verbose "$(Get-Date -Format G): Save As TEXT         : $($TEXT)"
+	Write-Verbose "$(Get-Date -Format G): Save As WORD         : $($MSWORD)"
+	Write-Verbose "$(Get-Date -Format G): ScriptInfo           : $($ScriptInfo)"
+	Write-Verbose "$(Get-Date -Format G): Smtp Port            : $($SmtpPort)"
+	Write-Verbose "$(Get-Date -Format G): Smtp Server          : $($SmtpServer)"
+	Write-Verbose "$(Get-Date -Format G): Title                : $($Script:Title)"
+	Write-Verbose "$(Get-Date -Format G): To                   : $($To)"
+	Write-Verbose "$(Get-Date -Format G): Use SSL              : $($UseSSL)"
+	Write-Verbose "$(Get-Date -Format G): User                 : $($Script:User)"
 	If($MSWORD -or $PDF)
 	{
-		Write-Verbose "$(Get-Date): User Name            : $($UserName)"
+		Write-Verbose "$(Get-Date -Format G): User Name            : $($UserName)"
 	}
-	Write-Verbose "$(Get-Date): "
-	Write-Verbose "$(Get-Date): OS Detected          : $($Script:RunningOS)"
-	Write-Verbose "$(Get-Date): PoSH version         : $($Host.Version)"
-	Write-Verbose "$(Get-Date): PSCulture            : $($PSCulture)"
-	Write-Verbose "$(Get-Date): PSUICulture          : $($PSUICulture)"
+	Write-Verbose "$(Get-Date -Format G): "
+	Write-Verbose "$(Get-Date -Format G): OS Detected          : $($Script:RunningOS)"
+	Write-Verbose "$(Get-Date -Format G): PoSH version         : $($Host.Version)"
+	Write-Verbose "$(Get-Date -Format G): PSCulture            : $($PSCulture)"
+	Write-Verbose "$(Get-Date -Format G): PSUICulture          : $($PSUICulture)"
 	If($MSWORD -or $PDF)
 	{
-		Write-Verbose "$(Get-Date): Word language        : $($Script:WordLanguageValue)"
-		Write-Verbose "$(Get-Date): Word version         : $($Script:WordProduct)"
+		Write-Verbose "$(Get-Date -Format G): Word language        : $($Script:WordLanguageValue)"
+		Write-Verbose "$(Get-Date -Format G): Word version         : $($Script:WordProduct)"
 	}
-	Write-Verbose "$(Get-Date): "
-	Write-Verbose "$(Get-Date): Script start         : $($Script:StartTime)"
-	Write-Verbose "$(Get-Date): "
-	Write-Verbose "$(Get-Date): "
+	Write-Verbose "$(Get-Date -Format G): "
+	Write-Verbose "$(Get-Date -Format G): Script start         : $($Script:StartTime)"
+	Write-Verbose "$(Get-Date -Format G): "
+	Write-Verbose "$(Get-Date -Format G): "
 }
 
 Function AbortScript
@@ -3343,7 +3334,7 @@ Function AbortScript
 		If(Test-Path variable:script:word)
 		{
 			$Script:Word.quit()
-			Write-Verbose "$(Get-Date): System Cleanup"
+			Write-Verbose "$(Get-Date -Format G): System Cleanup"
 			[System.Runtime.Interopservices.Marshal]::ReleaseComObject($Script:Word) | Out-Null
 			Remove-Variable -Name word -Scope Script 4>$Null
 		}
@@ -3357,13 +3348,13 @@ Function AbortScript
 		$wordprocess = (Get-Process 'WinWord' -ea 0) | Where-Object {$_.SessionId -eq $SessionID}
 		If($null -ne $wordprocess -and $wordprocess.Id -gt 0)
 		{
-			Write-Verbose "$(Get-Date): WinWord process is still running. Attempting to stop WinWord process # $($wordprocess.Id)"
+			Write-Verbose "$(Get-Date -Format G): WinWord process is still running. Attempting to stop WinWord process # $($wordprocess.Id)"
 			Stop-Process $wordprocess.Id -EA 0
 		}
 	}
 	[gc]::collect() 
 	[gc]::WaitForPendingFinalizers()
-	Write-Verbose "$(Get-Date): Script has been aborted"
+	Write-Verbose "$(Get-Date -Format G): Script has been aborted"
 	Exit
 }
 
@@ -3373,7 +3364,7 @@ Function AbortScript
 Function SendEmail
 {
 	Param([array]$Attachments)
-	Write-Verbose "$(Get-Date): Prepare to email"
+	Write-Verbose "$(Get-Date -Format G): Prepare to email"
 
 	$emailAttachment = $Attachments
 	$emailSubject = $Script:Title
@@ -3413,13 +3404,13 @@ $Script:Title is attached.
 		
 		If($?)
 		{
-			Write-Verbose "$(Get-Date): Email successfully sent using anonymous credentials"
+			Write-Verbose "$(Get-Date -Format G): Email successfully sent using anonymous credentials"
 		}
 		ElseIf(!$?)
 		{
 			$e = $error[0]
 
-			Write-Verbose "$(Get-Date): Email was not sent:"
+			Write-Verbose "$(Get-Date -Format G): Email was not sent:"
 			Write-Warning "$(Get-Date): Exception: $e.Exception" 
 		}
 	}
@@ -3427,7 +3418,7 @@ $Script:Title is attached.
 	{
 		If($UseSSL)
 		{
-			Write-Verbose "$(Get-Date): Trying to send email using current user's credentials with SSL"
+			Write-Verbose "$(Get-Date -Format G): Trying to send email using current user's credentials with SSL"
 			Send-MailMessage -Attachments $emailAttachment -Body $emailBody -BodyAsHtml -From $From `
 			-Port $SmtpPort -SmtpServer $SmtpServer -Subject $emailSubject -To $To `
 			-UseSSL *>$Null
@@ -3447,7 +3438,7 @@ $Script:Title is attached.
 			If($null -ne $e.Exception -and $e.Exception.ToString().Contains("5.7"))
 			{
 				#The server response was: 5.7.xx SMTP; Client was not authenticated to send anonymous mail during MAIL FROM
-				Write-Verbose "$(Get-Date): Current user's credentials failed. Ask for usable credentials."
+				Write-Verbose "$(Get-Date -Format G): Current user's credentials failed. Ask for usable credentials."
 
 				If($Dev)
 				{
@@ -3473,19 +3464,19 @@ $Script:Title is attached.
 
 				If($?)
 				{
-					Write-Verbose "$(Get-Date): Email successfully sent using new credentials"
+					Write-Verbose "$(Get-Date -Format G): Email successfully sent using new credentials"
 				}
 				ElseIf(!$?)
 				{
 					$e = $error[0]
 
-					Write-Verbose "$(Get-Date): Email was not sent:"
+					Write-Verbose "$(Get-Date -Format G): Email was not sent:"
 					Write-Warning "$(Get-Date): Exception: $e.Exception" 
 				}
 			}
 			Else
 			{
-				Write-Verbose "$(Get-Date): Email was not sent:"
+				Write-Verbose "$(Get-Date -Format G): Email was not sent:"
 				Write-Warning "$(Get-Date): Exception: $e.Exception" 
 			}
 		}
@@ -3507,13 +3498,19 @@ Function ProcessScriptSetup
 		The PSAdmin module could not be loaded.
 		`n`n
 		`t`t
+		Are you running this script against a V17 RAS server?
+		`n`n
+		`t`t
 		Please see the Prerequisites section in the ReadMe file (RAS_Inventory_V1_ReadMe.rtf).
+		`n`n
+		`t`t
+		https://carlwebster.sharefile.com/d-safd2a2d3b45f401f8b9678f2a1730f42
 		`n`n
 		`t`t
 		Script cannot continue.
 		`n`n
 		"
-		Write-Verbose "$(Get-Date): "
+		Write-Verbose "$(Get-Date -Format G): "
 		AbortScript
 	}
 
@@ -3521,7 +3518,7 @@ Function ProcessScriptSetup
 	If($Script:ServerName -eq "localhost")
 	{
 		$Script:ServerName = $env:ComputerName
-		Write-Verbose "$(Get-Date): Server name has been changed from localhost to $($Script:ServerName)"
+		Write-Verbose "$(Get-Date -Format G): Server name has been changed from localhost to $($Script:ServerName)"
 	}
 	
 	#if computer name is an IP address, get host name from DNS
@@ -3535,7 +3532,7 @@ Function ProcessScriptSetup
 		If($? -and $Null -ne $Result)
 		{
 			$Script:ServerName = $Result.HostName
-			Write-Verbose "$(Get-Date): Server name has been changed from $ip to $Script:ServerName"
+			Write-Verbose "$(Get-Date -Format G): Server name has been changed from $ip to $Script:ServerName"
 		}
 		Else
 		{
@@ -3551,14 +3548,14 @@ Function ProcessScriptSetup
 	{
 		#get server name
 		#first test to make sure the server is reachable
-		Write-Verbose "$(Get-Date): Testing to see if $Script:ServerName is online and reachable"
+		Write-Verbose "$(Get-Date -Format G): Testing to see if $Script:ServerName is online and reachable"
 		If(Test-Connection -ComputerName $Script:ServerName -quiet -EA 0)
 		{
-			Write-Verbose "$(Get-Date): Server $Script:ServerName is online."
+			Write-Verbose "$(Get-Date -Format G): Server $Script:ServerName is online."
 		}
 		Else
 		{
-			Write-Verbose "$(Get-Date): Server $Script:ServerName is offline"
+			Write-Verbose "$(Get-Date -Format G): Server $Script:ServerName is offline"
 			$ErrorActionPreference = $SaveEAPreference
 			Write-Error "
 			`n`n
@@ -3577,7 +3574,7 @@ Function ProcessScriptSetup
 	
 	$creds = Get-Credential -UserName $Script:User -message "Enter credentials to connect to $Script:ServerName"
 
-	Write-Verbose "$(Get-Date): Attempting connection to $Script:ServerName as $($creds.UserName)"
+	Write-Verbose "$(Get-Date -Format G): Attempting connection to $Script:ServerName as $($creds.UserName)"
 	$PSDefaultParameterValues = @{"*:Verbose"=$False}
 	
 	$Results = New-RASSession -username $creds.UserName -Password $creds.Password -Server $Script:ServerName -EA 0 *>$Null
@@ -3603,10 +3600,10 @@ Function ProcessScriptSetup
 	{
 		$PSDefaultParameterValues = @{"*:Verbose"=$True}
 		$Script:User = $creds.UserName
-		Write-Verbose "$(Get-Date): Successfully connected to $Script:ServerName as $Script:User"
+		Write-Verbose "$(Get-Date -Format G): Successfully connected to $Script:ServerName as $Script:User"
 	}
 
-	Write-Verbose "$(Get-Date): Get RAS Version"
+	Write-Verbose "$(Get-Date -Format G): Get RAS Version"
 	$Results = Get-RASVersion -EA 0 4>$Null
 	
 	If($? -and $Null -ne $Results)
@@ -3617,7 +3614,7 @@ Function ProcessScriptSetup
 	{
 		$Script:RASVersion = 0
 	}
-	Write-Verbose "$(Get-Date): Running RAS Version $($Script:RASVersion)"
+	Write-Verbose "$(Get-Date -Format G): Running RAS Version $($Script:RASVersion)"
 	$Script:Title = "Parallels RAS Inventory"
 }
 #endregion
@@ -3625,12 +3622,12 @@ Function ProcessScriptSetup
 #region script end
 Function ProcessScriptEnd
 {
-	Write-Verbose "$(Get-Date): Script has completed"
-	Write-Verbose "$(Get-Date): "
+	Write-Verbose "$(Get-Date -Format G): Script has completed"
+	Write-Verbose "$(Get-Date -Format G): "
 
 	#http://poshtips.com/measuring-elapsed-time-in-powershell/
-	Write-Verbose "$(Get-Date): Script started: $($Script:StartTime)"
-	Write-Verbose "$(Get-Date): Script ended: $(Get-Date)"
+	Write-Verbose "$(Get-Date -Format G): Script started: $($Script:StartTime)"
+	Write-Verbose "$(Get-Date -Format G): Script ended: $(Get-Date)"
 	$runtime = $(Get-Date) - $Script:StartTime
 	$Str = [string]::format("{0} days, {1} hours, {2} minutes, {3}.{4} seconds",
 		$runtime.Days,
@@ -3638,7 +3635,7 @@ Function ProcessScriptEnd
 		$runtime.Minutes,
 		$runtime.Seconds,
 		$runtime.Milliseconds)
-	Write-Verbose "$(Get-Date): Elapsed time: $($Str)"
+	Write-Verbose "$(Get-Date -Format G): Elapsed time: $($Str)"
 
 	If($Dev)
 	{
@@ -3730,11 +3727,11 @@ Function ProcessScriptEnd
 			try 
 			{
 				Stop-Transcript | Out-Null
-				Write-Verbose "$(Get-Date): $Script:LogPath is ready for use"
+				Write-Verbose "$(Get-Date -Format G): $Script:LogPath is ready for use"
 			} 
 			catch 
 			{
-				Write-Verbose "$(Get-Date): Transcript/log stop failed"
+				Write-Verbose "$(Get-Date -Format G): Transcript/log stop failed"
 			}
 		}
 	}
@@ -3756,7 +3753,7 @@ Function ProcessScriptEnd
 #region process farm
 Function ProcessFarm
 {
-	Write-Verbose "$(Get-Date): Processing Farm"
+	Write-Verbose "$(Get-Date -Format G): Processing Farm"
 	
 	$Results = Get-RASFarmSettings -EA 0
 
@@ -3799,7 +3796,7 @@ Function ProcessFarm
 
 Function OutputFarm
 {
-	Write-Verbose "$(Get-Date): `tOutput Farm"
+	Write-Verbose "$(Get-Date -Format G): `tOutput Farm"
 	
 	If($MSWord -or $PDF)
 	{
@@ -3818,7 +3815,7 @@ Function OutputFarm
 
 Function ProcessFarmSites
 {
-	Write-Verbose "$(Get-Date): `tProcessing Farm Sites"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Farm Sites"
 	$Sites = Get-Site -EA 0 4> $Null
 
 	If(!$?)
@@ -3876,7 +3873,7 @@ Function OutputFarmSite
 {
 	Param([object]$Site)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Farm Site $($Site.Name)"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Farm Site $($Site.Name)"
 	$SiteSettings = Get-SiteStatus -Siteid $Site.Id -EA 0 4> $Null
 	
 	If(!$?)
@@ -3905,7 +3902,7 @@ Function OutputFarmSite
 			WriteHTMLLine 0 0 "Unable to retrieve Site Status for Site $Site.Name"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $SiteSettings)
 	{
 		Write-Warning "
 		`n`n
@@ -3981,6 +3978,7 @@ Function OutputFarmSite
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 200;
@@ -4021,7 +4019,7 @@ Function OutputFarmSite
 
 Function ProcessSites
 {
-	Write-Verbose "$(Get-Date): `tProcessing Sites"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Sites"
 	$Sites = Get-Site -EA 0 4> $Null
 
 	If(!$?)
@@ -4159,7 +4157,7 @@ Function OutputSite
 {
 	Param([object]$Site)
 	
-	Write-Verbose "$(Get-Date): `tOutput Site $($Site.Name)"
+	Write-Verbose "$(Get-Date -Format G): `tOutput Site $($Site.Name)"
 	$RDSHosts = Get-RDS -Siteid $Site.Id -EA 0 4> $Null
 	
 	If(!$?)
@@ -4183,7 +4181,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve RD Session Hosts for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $RDSHosts)
 	{
 		Write-Warning "
 		`n`n
@@ -4223,7 +4221,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "RD Session Hosts"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Site RD Session Hosts"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Site RD Session Hosts"
 		ForEach($RDSHost in $RDSHosts)
 		{
 			$RDSStatus = Get-RDSStatus -Id $RDSHost.Id -EA 0 4>$Null
@@ -4293,6 +4291,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -4364,7 +4363,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve VDI for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $VDIHosts)
 	{
 		Write-Warning "
 		`n`n
@@ -4400,7 +4399,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "VDI Providers"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Site VDI Providers"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Site VDI Providers"
 		ForEach($VDIHost in $VDIHosts)
 		{
 			$VDIHostStatus = Get-VDIHostStatus -Id $VDIHost.Id -EA 0 4>$Null
@@ -4468,6 +4467,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -4537,7 +4537,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve Gateways for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $GWs)
 	{
 		Write-Warning "
 		`n`n
@@ -4573,7 +4573,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "Gateways"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Site Gateways"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Site Gateways"
 		ForEach($GW in $GWs)
 		{
 			$GWStatus = Get-GWStatus -Id $GW.Id -EA 0 4>$Null
@@ -4643,6 +4643,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -4714,7 +4715,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve Publishing Agents for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $PAs)
 	{
 		Write-Warning "
 		`n`n
@@ -4750,7 +4751,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "Publishing Agents"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Site Publishing Agents"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Site Publishing Agents"
 		ForEach($PA in $PAs)
 		{
 			$PAStatus = Get-PAStatus -Id $PA.Id -EA 0 4>$Null
@@ -4775,7 +4776,7 @@ Function OutputSite
 					WriteHTMLLine 0 0 "Unable to retrieve Publishing Agents Status for Publishing Agents $($PA.Id)"
 				}
 			}
-			ElseIf($? -and $Null -eq $GWStatus)
+			ElseIf($? -and $Null -eq $PAStatus)
 			{
 				Write-Warning "
 				`n`n
@@ -4816,6 +4817,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -4860,7 +4862,7 @@ Function OutputSite
 		}
 	}
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Site RD Session Hosts for Site $($Site.Name)"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Site RD Session Hosts for Site $($Site.Name)"
 	$RDSHosts = Get-RDS -Siteid $Site.Id -EA 0 4> $Null
 	
 	If(!$?)
@@ -4884,7 +4886,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve RD Session Hosts for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $RDSHosts)
 	{
 		Write-Warning "
 		`n`n
@@ -4922,7 +4924,7 @@ Function OutputSite
 
 		ForEach($RDSHost in $RDSHosts)
 		{
-			Write-Verbose "$(Get-Date): `t`t`tOutput Site RD Session Host $($RDSHost.Server)"
+			Write-Verbose "$(Get-Date -Format G): `t`t`tOutput Site RD Session Host $($RDSHost.Server)"
 			$RDSStatus = Get-RDSStatus -Id $RDSHost.Id -EA 0 4>$Null
 			
 			If(!$?)
@@ -5050,6 +5052,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -5125,6 +5128,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -5466,6 +5470,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -5630,6 +5635,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -5789,6 +5795,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -5952,6 +5959,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -5985,7 +5993,7 @@ Function OutputSite
 		}
 	}
 
-	Write-Verbose "$(Get-Date): `t`tOutput Site RD Session Host Groups for Site $($Site.Name)"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Site RD Session Host Groups for Site $($Site.Name)"
 	$RDSGroups = Get-RDSGroup -Siteid $Site.Id -EA 0 4> $Null
 	
 	If(!$?)
@@ -6009,7 +6017,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve RD Session Host Groups for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $RDSGroups)
 	{
 		Write-Warning "
 		`n`n
@@ -6047,7 +6055,7 @@ Function OutputSite
 
 		ForEach($RDSGroup in $RDSGroups)
 		{
-			Write-Verbose "$(Get-Date): `t`t`tOutput Site RD Session Host Group $($RDSGroup.Name)"
+			Write-Verbose "$(Get-Date -Format G): `t`t`tOutput Site RD Session Host Group $($RDSGroup.Name)"
 			If($MSWord -or $PDF)
 			{
 				WriteWordLine 3 0 "Group $($RDSGroup.Name)"
@@ -6063,6 +6071,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -6148,6 +6157,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -6402,6 +6412,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -6527,6 +6538,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -6647,6 +6659,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -6773,6 +6786,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -6806,7 +6820,7 @@ Function OutputSite
 		}
 	}
 
-	Write-Verbose "$(Get-Date): `t`tOutput Site RD Session Host Scheduler for Site $($Site.Name)"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Site RD Session Host Scheduler for Site $($Site.Name)"
 	$RDSSchedules = Get-RDSSchedule -Siteid $Site.Id -EA 0 4> $Null
 	
 	If(!$?)
@@ -6830,7 +6844,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve RD Session Host Scheduler for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $RDSSchedules)
 	{
 		Write-Warning "
 		`n`n
@@ -6868,7 +6882,7 @@ Function OutputSite
 
 		ForEach($RDSSchedule in $RDSSchedules)
 		{
-			Write-Verbose "$(Get-Date): `t`t`tOutput Site RD Session Host Scheduler $($RDSSchedule.Name)"
+			Write-Verbose "$(Get-Date -Format G): `t`t`tOutput Site RD Session Host Scheduler $($RDSSchedule.Name)"
 			$Action = $RDSSchedule.Action
 			If($RDSSChedule.Action -eq "Reboot")
 			{
@@ -7022,6 +7036,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7141,6 +7156,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7238,6 +7254,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7350,6 +7367,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7481,7 +7499,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve VDI for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $VDIHosts)
 	{
 		Write-Warning "
 		`n`n
@@ -7517,7 +7535,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "VDI"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Site VDI"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Site VDI"
 		ForEach($VDIHost in $VDIHosts)
 		{
 			$VDIHostStatus = Get-VDIHostStatus -Id $VDIHost.Id -EA 0 4>$Null
@@ -7598,6 +7616,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -7695,6 +7714,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7766,6 +7786,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7824,6 +7845,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7898,6 +7920,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -7998,6 +8021,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8206,6 +8230,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8290,6 +8315,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8355,6 +8381,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8418,6 +8445,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8499,6 +8527,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8622,7 +8651,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve Gateways for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $GWs)
 	{
 		Write-Warning "
 		`n`n
@@ -8658,7 +8687,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "Gateways"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Gateways"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Gateways"
 		ForEach($GW in $GWs)
 		{
 			$GWStatus = Get-GWStatus -Id $GW.Id -EA 0 4>$Null
@@ -8844,6 +8873,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -8994,6 +9024,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -9223,6 +9254,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -9425,6 +9457,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -9517,6 +9550,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -9705,6 +9739,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -9831,6 +9866,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -9967,6 +10003,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -10092,6 +10129,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -10148,7 +10186,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve Publishing Agents for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $PAs)
 	{
 		Write-Warning "
 		`n`n
@@ -10184,7 +10222,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "Publishing Agents"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Publishing Agents"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Publishing Agents"
 		ForEach($PA in $PAs)
 		{
 			$PAStatus = Get-PAStatus -Id $PA.Id -EA 0 4>$Null
@@ -10210,7 +10248,7 @@ Function OutputSite
 					WriteHTMLLine 0 0 "Unable to retrieve Publishing Agent Status for Publishing Agent $($PA.Id)"
 				}
 			}
-			ElseIf($? -and $Null -eq $GWStatus)
+			ElseIf($? -and $Null -eq $PAStatus)
 			{
 				Write-Warning "
 				`n`n
@@ -10262,6 +10300,7 @@ Function OutputSite
 					-Format $wdTableGrid `
 					-AutoFit $wdAutoFitFixed;
 
+					SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 					SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 					$Table.Columns.Item(1).Width = 200;
@@ -10337,6 +10376,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -10407,7 +10447,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve Certificates for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $Certs)
 	{
 		Write-Warning "
 		`n`n
@@ -10443,7 +10483,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "Certificates"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Certificates"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Certificates"
 		ForEach($Cert in $Certs)
 		{
 			If($MSWord -or $PDF)
@@ -10463,6 +10503,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -10542,6 +10583,7 @@ Function OutputSite
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -10611,7 +10653,7 @@ Function OutputSite
 			WriteHTMLLine 0 0 "Unable to retrieve Certificates for Site $($Site.Name)"
 		}
 	}
-	ElseIf($? -and $Null -eq $Sites)
+	ElseIf($? -and $Null -eq $FarmSettings)
 	{
 		Write-Warning "
 		`n`n
@@ -10648,7 +10690,7 @@ Function OutputSite
 			WriteHTMLLine 2 0 "Settings"
 		}
 
-		Write-Verbose "$(Get-Date): `t`tOutput Settings"
+		Write-Verbose "$(Get-Date -Format G): `t`tOutput Settings"
 	}
 		
 	If($MSWord -or $PDF)
@@ -10677,6 +10719,7 @@ Function OutputSite
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 200;
@@ -10780,6 +10823,7 @@ Function OutputSite
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 200;
@@ -10856,11 +10900,11 @@ Function OutputSite
 #region process load balancing
 Function ProcessLoadBalancing
 {
-	Write-Verbose "$(Get-Date): Processing Load balancing"
+	Write-Verbose "$(Get-Date -Format G): Processing Load balancing"
 	
 	OutputLoadBalancingSectionPage
 	
-	Write-Verbose "$(Get-Date): `tProcessing Load balancing"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Load balancing"
 	
 	$results = Get-RASLBSettings -EA 0 4>$Null
 	
@@ -10933,7 +10977,7 @@ Function OutputRASLBSettings
 {
 	Param([object] $RASLBSettings)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Load balancing"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Load balancing"
 	
 	If($MSWord -or $PDF)
 	{
@@ -10978,6 +11022,7 @@ Function OutputRASLBSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 275;
@@ -11058,7 +11103,7 @@ Function ListFolder($folder, $spaces)
 
 Function ProcessPublishing
 {
-	Write-Verbose "$(Get-Date): Processing Publishing"
+	Write-Verbose "$(Get-Date -Format G): Processing Publishing"
 	
 	$Sites = Get-Site -EA 0 4> $Null
 
@@ -11110,7 +11155,7 @@ Function ProcessPublishing
 		{
 			OutputPublishingSectionPage $Site.Name
 			
-			Write-Verbose "$(Get-Date): `tProcessing Publishing for Site $($Site.Name)"
+			Write-Verbose "$(Get-Date -Format G): `tProcessing Publishing for Site $($Site.Name)"
 			
 			$results = Get-PubItem -SiteId $Site.Id -EA 0 4>$Null
 				
@@ -11190,7 +11235,7 @@ Function OutputPublishingSettings
 {
 	Param([object] $PubItems, [uint32] $SiteId, [string] $xSiteName)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Publishing for Site $xSiteName"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Publishing for Site $xSiteName"
 	
 	<#
 	Folder
@@ -11203,7 +11248,7 @@ Function OutputPublishingSettings
 	#>
 
 	#Get the published items default settings
-	Write-Verbose "$(Get-Date): `t`t`tRetrieve Publishing Default Site Settings for Site $xSiteName"
+	Write-Verbose "$(Get-Date -Format G): `t`t`tRetrieve Publishing Default Site Settings for Site $xSiteName"
 	$results = Get-PubDefaultSettings -SiteId $SiteId -EA 0 4>$Null
 	
 	If(!$?)
@@ -11318,7 +11363,7 @@ Function OutputPublishingSettings
 	
 	ForEach($PubItem in $PubItems)
 	{
-		Write-Verbose "$(Get-Date): `t`t`t`tOutput $($PubItem.Name)"
+		Write-Verbose "$(Get-Date -Format G): `t`t`t`tOutput $($PubItem.Name)"
 
 		If(ValidObject $PubItem WinType)
 		{
@@ -11517,6 +11562,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -11553,6 +11599,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -11576,6 +11623,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -12160,6 +12208,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -12196,6 +12245,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -12220,6 +12270,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -12243,6 +12294,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13047,6 +13099,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13083,6 +13136,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13145,6 +13199,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13170,6 +13225,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13194,6 +13250,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13239,6 +13296,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13297,6 +13355,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13355,6 +13414,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -13738,6 +13798,34 @@ Function OutputPublishingSettings
 				Else
 				{
 					Line 3 "Settings are not replicated to all Sites"
+				}
+				Line 0 ""
+
+				Line 2 "License"
+				Line 3 "Inherit default settings`t`t`t`t: " $PubItem.InheritLicenseDefaultSettings.ToString()
+
+				If($PubItem.InheritLicenseDefaultSettings)
+				{
+					Line 3 "Session Sharing`t`t`t`t`t`t: " $DefaultDisableSessionSharing
+					Line 3 "Allow users to start only 1 instance of this application: " $DefaultOneInstancePerUser.ToString()
+					Line 3 "Concurrent licenses`t`t`t`t`t: " $DefaultConCurrentLicenses
+					Line 3 "If limit is exceeded`t`t`t`t`t: " $DefaultLicenseLimitNotify
+				}
+				Else
+				{
+					Line 3 "Session Sharing`t`t`t`t`t`t: " $SessionSharing
+					Line 3 "Allow users to start only 1 instance of this application: " $PubItem.OneInstancePerUser.ToString()
+					Line 3 "Concurrent licenses`t`t`t`t`t: " $ConCurrentLicenses
+					Line 3 "If limit is exceeded`t`t`t`t`t: " $LicenseLimitNotify
+				}
+
+				If($PubItem.InheritLicenseDefaultSettings)
+				{
+					Line 3 "Settings are replicated to all Sites`t`t`t: " $DefaultReplicateLicenseSettings.ToString()
+				}
+				Else
+				{
+					Line 3 "Settings are replicated to all Sites`t`t`t: " $PubItem.ReplicateLicenseSettings.ToString()
 				}
 				Line 0 ""
 
@@ -14181,6 +14269,52 @@ Function OutputPublishingSettings
 				}
 				WriteHTMLLine 0 0 ""
 
+				WriteHTMLLine 3 0 "License"
+				$rowdata = @()
+				$columnHeaders = @("Inherit default settings",($Script:htmlsb),$PubItem.InheritLicenseDefaultSettings.ToString(),$htmlwhite)
+
+				If($PubItem.InheritLicenseDefaultSettings)
+				{
+					$rowdata += @(,("Session Sharing",($Script:htmlsb),$DefaultDisableSessionSharing,$htmlwhite))
+					If($DefaultOneInstancePerUser)
+					{
+						$rowdata += @(,("Allow users to start only 1 instance of this application",($Script:htmlsb),"True",$htmlwhite))
+					}
+					Else
+					{
+						$rowdata += @(,("Allow users to start only 1 instance of this application",($Script:htmlsb),"False",$htmlwhite))
+					}
+					$rowdata += @(,("Concurrent licenses",($Script:htmlsb),$DefaultConCurrentLicenses,$htmlwhite))
+					$rowdata += @(,("If limit is exceeded",($Script:htmlsb),$DefaultLicenseLimitNotify,$htmlwhite))
+				}
+				Else
+				{
+					$rowdata += @(,("Session Sharing",($Script:htmlsb),$SessionSharing,$htmlwhite))
+					If($PubItem.OneInstancePerUser)
+					{
+						$rowdata += @(,("Allow users to start only 1 instance of this application",($Script:htmlsb),"True",$htmlwhite))
+					}
+					Else
+					{
+						$rowdata += @(,("Allow users to start only 1 instance of this application",($Script:htmlsb),"False",$htmlwhite))
+					}
+					$rowdata += @(,("Concurrent licenses",($Script:htmlsb),$ConCurrentLicenses,$htmlwhite))
+					$rowdata += @(,("If limit is exceeded",($Script:htmlsb),$LicenseLimitNotify,$htmlwhite))
+				}
+				If($PubItem.InheritLicenseDefaultSettings)
+				{
+					$rowdata += @(,("Settings are replicated to all Sites: ",($Script:htmlsb),$DefaultReplicateLicenseSettings.ToString(),$htmlwhite))
+				}
+				Else
+				{
+					$rowdata += @(,("Settings are replicated to all Sites: ",($Script:htmlsb),$PubItem.ReplicateLicenseSettings.ToString(),$htmlwhite))
+				}
+
+				$msg = ""
+				$columnWidths = @("200","300")
+				FormatHTMLTable $msg "auto" -rowArray $rowdata -columnArray $columnHeaders -fixedWidth $columnWidths
+				WriteHTMLLine 0 0 ""
+
 				WriteHTMLLine 3 0 "Display"
 				$rowdata = @()
 				$columnHeaders = @("Inherit default settings",($Script:htmlsb),$PubItem.InheritDisplayDefaultSettings.ToString(),$htmlwhite)
@@ -14423,6 +14557,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -14459,6 +14594,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -14487,6 +14623,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -15224,6 +15361,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -15260,6 +15398,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -15288,6 +15427,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -15311,6 +15451,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -16103,6 +16244,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -16139,6 +16281,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -16202,6 +16345,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -16227,6 +16371,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -16249,6 +16394,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -17114,6 +17260,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -17150,6 +17297,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -17175,6 +17323,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -17212,6 +17361,7 @@ Function OutputPublishingSettings
 				-Format $wdTableGrid `
 				-AutoFit $wdAutoFitFixed;
 
+				SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 				SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 				$Table.Columns.Item(1).Width = 200;
@@ -18813,6 +18963,7 @@ Function OutputPubItemShortCuts
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitContent;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Rows.SetLeftIndent($Indent0TabStops,$wdAdjustProportional)
@@ -18845,6 +18996,7 @@ Function OutputPubItemShortCuts
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitContent;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Rows.SetLeftIndent($Indent0TabStops,$wdAdjustProportional)
@@ -18964,11 +19116,11 @@ Function OutputPubItemShortCuts
 #region process universal printing
 Function ProcessUniversalPrinting
 {
-	Write-Verbose "$(Get-Date): Processing Universal Printing"
+	Write-Verbose "$(Get-Date -Format G): Processing Universal Printing"
 	
 	OutputUniversalPrintingSectionPage
 	
-	Write-Verbose "$(Get-Date): `tProcessing Universal Printing"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Universal Printing"
 	
 	$results = Get-RASPrintingSettings -EA 0 4>$Null
 	
@@ -19178,7 +19330,7 @@ Function OutputUniversalPrintingSettings
 {
 	Param([object]$Printingobj, [object]$RDSobj, [object]$VDIHostsobj)
  
-	Write-Verbose "$(Get-Date): `t`tOutput Universal printing"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Universal printing"
 	
 	If($MSWord -or $PDF)
 	{
@@ -19219,6 +19371,7 @@ Function OutputUniversalPrintingSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 200;
@@ -19394,7 +19547,7 @@ Function OutputUniversalPrinterDriversSettings
 {
 	Param([object] $RASPrinterSettings)
  
-	Write-Verbose "$(Get-Date): `t`tOutput Printer drivers"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Printer drivers"
 	
 	If($MSWord -or $PDF)
 	{
@@ -19434,6 +19587,7 @@ Function OutputUniversalPrinterDriversSettings
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 100;
@@ -19479,6 +19633,7 @@ Function OutputUniversalPrinterDriversSettings
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 100;
@@ -19564,7 +19719,7 @@ Function OutputUniversalPrinterFontsSettings
 {
 	Param([object] $RASFontsSettings)
 
-	Write-Verbose "$(Get-Date): `t`tOutput Fonts management"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Fonts management"
 	
 	If($MSWord -or $PDF)
 	{
@@ -19594,6 +19749,7 @@ Function OutputUniversalPrinterFontsSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 100;
@@ -19738,6 +19894,7 @@ Function OutputUniversalPrinterFontsSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 125;
@@ -19813,11 +19970,11 @@ Function OutputUniversalPrinterFontsSettings
 #region process universal scanning
 Function ProcessUniversalScanning
 {
-	Write-Verbose "$(Get-Date): Processing Universal scanning"
+	Write-Verbose "$(Get-Date -Format G): Processing Universal scanning"
 	
 	OutputUniversalScanningSectionPage
 	
-	Write-Verbose "$(Get-Date): `tProcessing Universal Scanning"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Universal Scanning"
 	
 	$results = Get-RASScanningSettings -EA 0 4>$Null
 	
@@ -19984,7 +20141,7 @@ Function OutputUniversalScanningSettings
 {
  Param([object]$WIAobj, [object]$TWAINobj, [object]$RDSobj, [object]$VDIHostsobj)
  
-	Write-Verbose "$(Get-Date): `t`tOutput WIA"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput WIA"
 	
 	If($MSWord -or $PDF)
 	{
@@ -20024,6 +20181,7 @@ Function OutputUniversalScanningSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 100;
@@ -20186,7 +20344,7 @@ Function OutputUniversalScanningSettings
 		WriteHTMLLine 0 0 ""
 	}
 
-	Write-Verbose "$(Get-Date): `t`tOutput TWAIN"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput TWAIN"
 	
 	If($MSWord -or $PDF)
 	{
@@ -20226,6 +20384,7 @@ Function OutputUniversalScanningSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 100;
@@ -20390,11 +20549,11 @@ Function OutputUniversalScanningSettings
 #region process connection
 Function ProcessConnection
 {
-	Write-Verbose "$(Get-Date): Processing Connection"
+	Write-Verbose "$(Get-Date -Format G): Processing Connection"
 	
 	OutputConnectionSectionPage
 	
-	Write-Verbose "$(Get-Date): `tProcessing Authentication"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Authentication"
 	
 	$results = Get-RASAuthSettings -EA 0 4>$Null
 	
@@ -20445,7 +20604,7 @@ Function ProcessConnection
 		OutputRASAuthSettings $results
 	}
 
-	Write-Verbose "$(Get-Date): `tProcessing Settings"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Settings"
 	
 	$results = Get-RASSessionSetting -EA 0 4>$Null
 	
@@ -20496,7 +20655,7 @@ Function ProcessConnection
 		OutputRASSessionSetting $results
 	}
 
-	Write-Verbose "$(Get-Date): `tProcessing Second level authentication"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Second level authentication"
 	
 	$results = Get-2FASetting -EA 0 4>$Null
 	
@@ -20547,7 +20706,7 @@ Function ProcessConnection
 		Output2FASetting $results
 	}
 
-	Write-Verbose "$(Get-Date): `tProcessing Allowed devices"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Allowed devices"
 	
 	$results = Get-RASAllowedDevicesSetting -EA 0 4>$Null
 	
@@ -20620,7 +20779,7 @@ Function OutputRASAuthSettings
 {
 	Param([object] $RASAuthSettings)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Authentication"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Authentication"
 	
 	If($MSWord -or $PDF)
 	{
@@ -20665,6 +20824,7 @@ Function OutputRASAuthSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 275;
@@ -20719,7 +20879,7 @@ Function OutputRASSessionSetting
 {
 	Param([object] $RASSessionSettings)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Settings"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Settings"
 	
 	If($MSWord -or $PDF)
 	{
@@ -20794,6 +20954,7 @@ Function OutputRASSessionSetting
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 275;
@@ -20834,7 +20995,7 @@ Function Output2FASetting
 {
 	Param([object] $RAS2FASettings)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Second level authentication"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Second level authentication"
 	
 	If($MSWord -or $PDF)
 	{
@@ -20939,6 +21100,7 @@ Function Output2FASetting
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 275;
@@ -21042,6 +21204,7 @@ Function Output2FASetting
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 275;
@@ -21063,6 +21226,7 @@ Function Output2FASetting
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 275;
@@ -21416,7 +21580,7 @@ Function OutputRASAllowedDevicesSetting
 {
 	Param([object] $RASAllowedDevices)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Allowed devices"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Allowed devices"
 	
 	Switch ($RASAllowedDevices.AllowClientMode)
 	{
@@ -21541,6 +21705,7 @@ Function OutputRASAllowedDevicesSetting
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 200;
@@ -21621,11 +21786,11 @@ Function OutputRASAllowedDevicesSetting
 #region process administration
 Function ProcessAdministration
 {
-	Write-Verbose "$(Get-Date): Processing Administration"
+	Write-Verbose "$(Get-Date -Format G): Processing Administration"
 	
 	OutputAdministrationSectionPage
 	
-	Write-Verbose "$(Get-Date): `tProcessing Accounts"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Accounts"
 	
 	$results = Get-RASAdminAccount -EA 0 4>$Null
 	
@@ -21678,7 +21843,7 @@ Function ProcessAdministration
 		OutputRASAccounts $results
 	}
 
-	Write-Verbose "$(Get-Date): `tProcessing Features"
+	Write-Verbose "$(Get-Date -Format G): `tProcessing Features"
 	
 	$RASFeatures = Get-RASSystemSettings -EA 0 4>$Null
 	
@@ -21949,7 +22114,7 @@ Function OutputRASAccounts
 {
 	Param([object] $RASAccounts)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Accounts"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Accounts"
 	
 	If($MSWord -or $PDF)
 	{
@@ -21990,6 +22155,7 @@ Function OutputRASAccounts
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 180;
@@ -22033,7 +22199,7 @@ Function OutputRASFeatures
 {
 	Param([object] $RASFeatures)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Features"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Features"
 	
 	If($MSWord -or $PDF)
 	{
@@ -22063,6 +22229,7 @@ Function OutputRASFeatures
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -22121,6 +22288,7 @@ Function OutputRASTurbo
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -22153,7 +22321,7 @@ Function OutputRASSettings
 {
 	Param([object] $RASFeatures)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Settings"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Settings"
 	
 	If($MSWord -or $PDF)
 	{
@@ -22182,6 +22350,7 @@ Function OutputRASSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -22235,6 +22404,7 @@ Function OutputRASSettings
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 180;
@@ -22261,6 +22431,7 @@ Function OutputRASSettings
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 180;
@@ -22355,6 +22526,7 @@ Function OutputRASSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -22387,7 +22559,7 @@ Function OutputRASMailboxSettings
 {
 	Param([object] $RASMailboxSettings)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Mailbox"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Mailbox"
 	
 	If($MSWord -or $PDF)
 	{
@@ -22430,6 +22602,7 @@ Function OutputRASMailboxSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -22493,6 +22666,7 @@ Function OutputRASMailboxSettings
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -22526,7 +22700,7 @@ Function OutputRASNotifications
 {
 	Param([object] $RASNotificationHandlers)
 	
-	Write-Verbose "$(Get-Date): `t`tOutput Notifications"
+	Write-Verbose "$(Get-Date -Format G): `t`tOutput Notifications"
 	
 	If($MSWord -or $PDF)
 	{
@@ -22662,6 +22836,7 @@ Function OutputRASNotifications
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 180;
@@ -22841,6 +23016,7 @@ Function OutputRASNotificationScripts
 			-Format $wdTableGrid `
 			-AutoFit $wdAutoFitFixed;
 
+			SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 			SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 			$Table.Columns.Item(1).Width = 180;
@@ -22882,7 +23058,7 @@ Function OutputRASNotificationScripts
 #region process licensing
 Function ProcessLicensing
 {
-	Write-Verbose "$(Get-Date): Processing Licensing"
+	Write-Verbose "$(Get-Date -Format G): Processing Licensing"
 
 	$results = Get-LicenseDetails -EA 0 4>$Null
 	
@@ -22938,7 +23114,7 @@ Function OutputRASLicense
 {
 	Param([object] $RASLicense)
 	
-	Write-Verbose "$(Get-Date): `tOutput RAS License"
+	Write-Verbose "$(Get-Date -Format G): `tOutput RAS License"
 
 	If($MSWord -or $PDF)
 	{
@@ -23000,6 +23176,7 @@ Function OutputRASLicense
 		-Format $wdTableGrid `
 		-AutoFit $wdAutoFitFixed;
 
+		SetWordCellFormat -Collection $Table -Size 10 -BackgroundColor $wdColorWhite
 		SetWordCellFormat -Collection $Table.Columns.Item(1).Cells -Bold -BackgroundColor $wdColorGray15;
 
 		$Table.Columns.Item(1).Width = 180;
@@ -23123,7 +23300,7 @@ ProcessLicensing
 #endregion
 
 #region finish script
-Write-Verbose "$(Get-Date): Finishing up document"
+Write-Verbose "$(Get-Date -Format G): Finishing up document"
 #end of document processing
 
 If(($MSWORD -or $PDF) -and ($Script:CoverPagesExist))
