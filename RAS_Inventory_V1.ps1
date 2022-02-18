@@ -86,6 +86,26 @@
 	
 	This parameter is disabled by default.
 	This parameter has an alias of SI.
+.PARAMETER ReportFooter
+	Outputs a footer section at the end of the report.
+
+	This parameter has an alias of RF.
+	
+	Report Footer
+		Report information:
+			Created with: <Script Name> - Release Date: <Script Release Date>
+			Script version: <Script Version>
+			Started on <Date Time in Local Format>
+			Elapsed time: nn days, nn hours, nn minutes, nn.nn seconds
+			Ran from domain <Domain Name> by user <Username>
+			Ran from the folder <Folder Name>
+
+	Script Name and Script Release date are script-specific variables.
+	Start Date Time in Local Format is a script variable.
+	Elapsed time is a calculated value.
+	Domain Name is $env:USERDNSDOMAIN.
+	Username is $env:USERNAME.
+	Folder Name is a script variable.
 .PARAMETER MSWord
 	SaveAs DOCX file
 	
@@ -228,8 +248,8 @@
 	Outputs, by default to HTML.
 	Prompts for credentials for the LocalHost RAS Server.
 .EXAMPLE
-	PS C:\PSScript .\RAS_Inventory_V1.ps1 -MSWord -CompanyName "Carl Webster Consulting" 
-	-CoverPage "Mod" -UserName "Carl Webster" -ComputerName RAS01
+	PS C:\PSScript .\RAS_Inventory_V1.ps1 -MSWord -CompanyName "Carl Webster 
+	Consulting" -CoverPage "Mod" -UserName "Carl Webster" -ComputerName RAS01
 
 	Will use:
 		Carl Webster Consulting for the Company Name.
@@ -240,8 +260,8 @@
 	Outputs to Microsoft Word.
 	Prompts for credentials for the RAS Server RAS01.
 .EXAMPLE
-	PS C:\PSScript .\RAS_Inventory_V1.ps1 -PDF -CN "Carl Webster Consulting" -CP "Mod" 
-	-UN "Carl Webster"
+	PS C:\PSScript .\RAS_Inventory_V1.ps1 -PDF -CN "Carl Webster Consulting" -CP 
+	"Mod" -UN "Carl Webster"
 
 	Will use:
 		Carl Webster Consulting for the Company Name (alias CN).
@@ -250,6 +270,19 @@
 
 	Outputs to PDF.
 	Prompts for credentials for the Localhost RAS Server.
+.EXAMPLE
+	PS C:\PSScript >.\RAS_Inventory_V1.ps1 -Dev -ScriptInfo -Log
+	
+	Creates the default report.
+	
+	Creates a text file named RASInventoryScriptErrors_yyyyMMddTHHmmssffff.txt that 
+	contains up to the last 250 errors reported by the script.
+	
+	Creates a text file named RASInventoryScriptInfo_yyyy-MM-dd_HHmm.txt that 
+	contains all the script parameters and other basic information.
+	
+	Creates a text file for transcript logging named 
+	RASDocScriptTranscript_yyyyMMddTHHmmssffff.txt.
 .EXAMPLE
 	PS C:\PSScript .\RAS_Inventory_V1.ps1 -CompanyName "Sherlock Holmes Consulting"
 	-CoverPage Exposure -UserName "Dr. Watson" -CompanyAddress "221B Baker Street, London, 
@@ -376,9 +409,9 @@
 	text document.
 .NOTES
 	NAME: RAS_Inventory_V1.ps1
-	VERSION: 1.01
+	VERSION: 1.02
 	AUTHOR: Carl Webster
-	LASTEDIT: April 19, 2021
+	LASTEDIT: February 18, 2022
 #>
 
 
@@ -415,6 +448,10 @@ Param(
 	[Alias("SI")]
 	[Switch]$ScriptInfo=$False,
 	
+	[parameter(Mandatory=$False)] 
+	[Alias("RF")]
+	[Switch]$ReportFooter=$False,
+
 	[parameter(ParameterSetName="WordPDF",Mandatory=$False)] 
 	[Switch]$MSWord=$False,
 
@@ -481,6 +518,36 @@ Param(
 
 #Version 1.0 released to the community on 5-August-2020
 #
+#Version 1.02 18-Feb-2022
+#	Added Function OutputReportFooter
+#	Added Parameter ReportFooter
+#		Outputs a footer section at the end of the report.
+#		Report Footer
+#			Report information:
+#				Created with: <Script Name> - Release Date: <Script Release Date>
+#				Script version: <Script Version>
+#				Started on <Date Time in Local Format>
+#				Elapsed time: nn days, nn hours, nn minutes, nn.nn seconds
+#				Ran from domain <Domain Name> by user <Username>
+#				Ran from the folder <Folder Name>
+#	Changed the date format for the transcript and error log files from yyyy-MM-dd_HHmm format to the FileDateTime format
+#		The format is yyyyMMddTHHmmssffff (case-sensitive, using a 4-digit year, 2-digit month, 2-digit day, 
+#		the letter T as a time separator, 2-digit hour, 2-digit minute, 2-digit second, and 4-digit millisecond). 
+#		For example: 20221225T0840107271.
+#	Fixed the German Table of Contents (Thanks to Rene Bigler)
+#		From 
+#			'de-'	{ 'Automatische Tabelle 2'; Break }
+#		To
+#			'de-'	{ 'Automatisches Verzeichnis 2'; Break }
+#	In Function AbortScript, add test for the winword process and terminate it if it is running
+#		Added stopping the transcript log if the log was enabled and started
+#	In Functions AbortScript and SaveandCloseDocumentandShutdownWord, add code from Guy Leech to test for the "Id" property before using it
+#	Replaced most script Exit calls with AbortScript to stop the transcript log if the log was enabled and started
+#	Updated Functions SaveandCloseTextDocument and SaveandCloseHTMLDocument to add a "Report Complete" line
+#	Updated Functions ShowScriptOptions and ProcessScriptEnd to add $ReportFooter
+#	Updated the help text
+#	Updated the ReadMe file
+#
 #Version 1.01 19-Apr-2021
 #	Added a message to the error message for the missing RAS module
 #		Added a link to the V1 ReadMe file
@@ -492,6 +559,58 @@ Param(
 #	Updated Function SetWordCellFormat to the latest version
 #	Updated the ReadMe file
 
+
+Function AbortScript
+{
+	If($MSWord -or $PDF)
+	{
+		Write-Verbose "$(Get-Date -Format G): System Cleanup"
+		If(Test-Path variable:global:word)
+		{
+			$Script:Word.quit()
+			[System.Runtime.Interopservices.Marshal]::ReleaseComObject($Script:Word) | Out-Null
+			Remove-Variable -Name word -Scope Global 4>$Null
+		}
+	}
+	[gc]::collect() 
+	[gc]::WaitForPendingFinalizers()
+
+	If($MSWord -or $PDF)
+	{
+		#is the winword Process still running? kill it
+
+		#find out our session (usually "1" except on TS/RDC or Citrix)
+		$SessionID = (Get-Process -PID $PID).SessionId
+
+		#Find out if winword running in our session
+		$wordprocess = ((Get-Process 'WinWord' -ea 0) | Where-Object {$_.SessionId -eq $SessionID}) | Select-Object -Property Id 
+		If( $wordprocess -and $wordprocess.Id -gt 0)
+		{
+			Write-Verbose "$(Get-Date -Format G): WinWord Process is still running. Attempting to stop WinWord Process # $($wordprocess.Id)"
+			Stop-Process $wordprocess.Id -EA 0
+		}
+	}
+	
+	Write-Verbose "$(Get-Date -Format G): Script has been aborted"
+	#stop transcript logging
+	If($Log -eq $True) 
+	{
+		If($Script:StartLog -eq $True) 
+		{
+			try 
+			{
+				Stop-Transcript | Out-Null
+				Write-Verbose "$(Get-Date -Format G): $Script:LogPath is ready for use"
+			} 
+			catch 
+			{
+				Write-Verbose "$(Get-Date -Format G): Transcript/log stop failed"
+			}
+		}
+	}
+	$ErrorActionPreference = $SaveEAPreference
+	Exit
+}
 
 Set-StrictMode -Version Latest
 
@@ -582,7 +701,7 @@ If($Script:pwdpath.EndsWith("\"))
 If($Log) 
 {
 	#start transcript logging
-	$Script:LogPath = "$Script:pwdpath\RASDocScriptTranscript_$(Get-Date -f yyyy-MM-dd_HHmm).txt"
+	$Script:LogPath = "$Script:pwdpath\RASDocScriptTranscript_$(Get-Date -f FileDateTime).txt"
 	
 	try 
 	{
@@ -600,7 +719,7 @@ If($Log)
 If($Dev)
 {
 	$Error.Clear()
-	$Script:DevErrorFile = "$Script:pwdpath\RASInventoryScriptErrors_$(Get-Date -f yyyy-MM-dd_HHmm).txt"
+	$Script:DevErrorFile = "$Script:pwdpath\RASInventoryScriptErrors_$(Get-Date -f FileDateTime).txt"
 }
 
 If(![String]::IsNullOrEmpty($SmtpServer) -and [String]::IsNullOrEmpty($From) -and [String]::IsNullOrEmpty($To))
@@ -613,7 +732,7 @@ If(![String]::IsNullOrEmpty($SmtpServer) -and [String]::IsNullOrEmpty($From) -an
 	`t`t
 	Script cannot continue.
 	`n`n"
-	Exit
+	AbortScript
 }
 If(![String]::IsNullOrEmpty($SmtpServer) -and [String]::IsNullOrEmpty($From) -and ![String]::IsNullOrEmpty($To))
 {
@@ -625,7 +744,7 @@ If(![String]::IsNullOrEmpty($SmtpServer) -and [String]::IsNullOrEmpty($From) -an
 	`t`t
 	Script cannot continue.
 	`n`n"
-	Exit
+	AbortScript
 }
 If(![String]::IsNullOrEmpty($SmtpServer) -and [String]::IsNullOrEmpty($To) -and ![String]::IsNullOrEmpty($From))
 {
@@ -637,7 +756,7 @@ If(![String]::IsNullOrEmpty($SmtpServer) -and [String]::IsNullOrEmpty($To) -and 
 	`t`t
 	Script cannot continue.
 	`n`n"
-	Exit
+	AbortScript
 }
 If(![String]::IsNullOrEmpty($From) -and ![String]::IsNullOrEmpty($To) -and [String]::IsNullOrEmpty($SmtpServer))
 {
@@ -649,7 +768,7 @@ If(![String]::IsNullOrEmpty($From) -and ![String]::IsNullOrEmpty($To) -and [Stri
 	`t`t
 	Script cannot continue.
 	`n`n"
-	Exit
+	AbortScript
 }
 If(![String]::IsNullOrEmpty($From) -and [String]::IsNullOrEmpty($SmtpServer))
 {
@@ -661,7 +780,7 @@ If(![String]::IsNullOrEmpty($From) -and [String]::IsNullOrEmpty($SmtpServer))
 	`t`t
 	Script cannot continue.
 	`n`n"
-	Exit
+	AbortScript
 }
 If(![String]::IsNullOrEmpty($To) -and [String]::IsNullOrEmpty($SmtpServer))
 {
@@ -673,7 +792,7 @@ If(![String]::IsNullOrEmpty($To) -and [String]::IsNullOrEmpty($SmtpServer))
 	`t`t
 	Script cannot continue.
 	`n`n"
-	Exit
+	AbortScript
 }
 #endregion
 
@@ -844,7 +963,8 @@ Function SetWordHashTable
 		{
 			'ca-'	{ 'Taula automática 2'; Break }
 			'da-'	{ 'Automatisk tabel 2'; Break }
-			'de-'	{ 'Automatische Tabelle 2'; Break }
+			#'de-'	{ 'Automatische Tabelle 2'; Break }
+			'de-'	{ 'Automatisches Verzeichnis 2'; Break } #changed 18-feb-2022 rene bigler
 			'en-'	{ 'Automatic Table 2'; Break }
 			'es-'	{ 'Tabla automática 2'; Break }
 			'fi-'	{ 'Automaattinen taulukko 2'; Break }
@@ -1460,7 +1580,7 @@ Function SetupWord
 		Script cannot continue.
 		`n`n
 		"
-		Exit
+		AbortScript
 	}
 	Else
 	{
@@ -3087,23 +3207,24 @@ Function SaveandCloseDocumentandShutdownWord
 	$Script:Word.Quit()
 	Write-Verbose "$(Get-Date -Format G): System Cleanup"
 	[System.Runtime.Interopservices.Marshal]::ReleaseComObject($Script:Word) | Out-Null
-	Remove-Variable -Name word -Scope Script 4>$Null
-	Remove-Variable -Name Doc  -Scope Script 4>$Null
+	If(Test-Path variable:global:word)
+	{
+		Remove-Variable -Name word -Scope Global 4>$Null
+	}
 	$SaveFormat = $Null
 	[gc]::collect() 
 	[gc]::WaitForPendingFinalizers()
 	
-	#is the winword process still running? kill it
+	#is the winword Process still running? kill it
 
 	#find out our session (usually "1" except on TS/RDC or Citrix)
 	$SessionID = (Get-Process -PID $PID).SessionId
 
-	#Find out if winword is running in our session
-	$wordprocess = $Null
-	$wordprocess = (Get-Process 'WinWord' -ea 0) | Where-Object {$_.SessionId -eq $SessionID}
-	If($null -ne $wordprocess -and $wordprocess.Id -gt 0)
+	#Find out if winword running in our session
+	$wordprocess = ((Get-Process 'WinWord' -ea 0) | Where-Object {$_.SessionId -eq $SessionID}) | Select-Object -Property Id 
+	If( $wordprocess -and $wordprocess.Id -gt 0)
 	{
-		Write-Verbose "$(Get-Date -Format G): WinWord process is still running. Attempting to stop WinWord process # $($wordprocess.Id)"
+		Write-Verbose "$(Get-Date -Format G): WinWord Process is still running. Attempting to stop WinWord Process # $($wordprocess.Id)"
 		Stop-Process $wordprocess.Id -EA 0
 	}
 }
@@ -3126,12 +3247,16 @@ Function SetupText
 Function SaveandCloseTextDocument
 {
 	Write-Verbose "$(Get-Date -Format G): Saving Text file"
+	Line 0 ""
+	Line 0 "Report Complete"
 	Write-Output $Script:Output.ToString() | Out-File $Script:TextFileName 4>$Null
 }
 
 Function SaveandCloseHTMLDocument
 {
 	Write-Verbose "$(Get-Date -Format G): Saving HTML file"
+	WriteHTMLLine 0 0 ""
+	WriteHTMLLine 0 0 "Report Complete"
 	Out-File -FilePath $Script:HtmlFileName -Append -InputObject "<p></p></body></html>" 4>$Null
 }
 
@@ -3154,6 +3279,71 @@ Function SetFilenames
 		SetupHTML
 	}
 	ShowScriptOptions
+}
+
+Function OutputReportFooter
+{
+	#Added in 2.51
+	<#
+	Report Footer
+		Report information:
+			Created with: <Script Name> - Release Date: <Script Release Date>
+			Script version: <Script Version>
+			Started on <Date Time in Local Format>
+			Elapsed time: nn days, nn hours, nn minutes, nn.nn seconds
+			Ran from domain <Domain Name> by user <Username>
+			Ran from the folder <Folder Name>
+
+	Script Name and Script Release date are script-specific variables.
+	Script version is a script variable.
+	Start Date Time in Local Format is a script variable.
+	Domain Name is $env:USERDNSDOMAIN.
+	Username is $env:USERNAME.
+	Folder Name is a script variable.
+	#>
+
+	$runtime = $(Get-Date) - $Script:StartTime
+	$Str = [string]::format("{0} days, {1} hours, {2} minutes, {3}.{4} seconds",
+		$runtime.Days,
+		$runtime.Hours,
+		$runtime.Minutes,
+		$runtime.Seconds,
+		$runtime.Milliseconds)
+
+	If($MSWORD -or $PDF)
+	{
+		$Script:selection.InsertNewPage()
+		WriteWordLine 1 0 "Report Footer"
+		WriteWordLine 2 0 "Report Information:"
+		WriteWordLine 0 1 "Created with: $Script:ScriptName - Release Date: $Script:ReleaseDate"
+		WriteWordLine 0 1 "Script version: $Script:MyVersion"
+		WriteWordLine 0 1 "Started on $Script:StartTime"
+		WriteWordLine 0 1 "Elapsed time: $Str"
+		WriteWordLine 0 1 "Ran from domain $env:USERDNSDOMAIN by user $env:USERNAME"
+		WriteWordLine 0 1 "Ran from the folder $Script:pwdpath"
+	}
+	If($Text)
+	{
+		Line 0 "///  Report Footer  \\\"
+		Line 1 "Report Information:"
+		Line 2 "Created with: $Script:ScriptName - Release Date: $Script:ReleaseDate"
+		Line 2 "Script version: $Script:MyVersion"
+		Line 2 "Started on $Script:StartTime"
+		Line 2 "Elapsed time: $Str"
+		Line 2 "Ran from domain $env:USERDNSDOMAIN by user $env:USERNAME"
+		Line 2 "Ran from the folder $Script:pwdpath"
+	}
+	If($HTML)
+	{
+		WriteHTMLLine 1 0 "///&nbsp;&nbsp;Report Footer&nbsp;&nbsp;\\\"
+		WriteHTMLLine 2 0 "Report Information:"
+		WriteHTMLLine 0 1 "Created with: $Script:ScriptName - Release Date: $Script:ReleaseDate"
+		WriteHTMLLine 0 1 "Script version: $Script:MyVersion"
+		WriteHTMLLine 0 1 "Started on $Script:StartTime"
+		WriteHTMLLine 0 1 "Elapsed time: $Str"
+		WriteHTMLLine 0 1 "Ran from domain $env:USERDNSDOMAIN by user $env:USERNAME"
+		WriteHTMLLine 0 1 "Ran from the folder $Script:pwdpath"
+	}
 }
 
 Function ProcessDocumentOutput
@@ -3296,6 +3486,7 @@ Function ShowScriptOptions
 	Write-Verbose "$(Get-Date -Format G): From                 : $($From)"
 	Write-Verbose "$(Get-Date -Format G): Log                  : $($Log)"
 	Write-Verbose "$(Get-Date -Format G): RAS Version          : $($Script:RASVersion)"
+	Write-Verbose "$(Get-Date -Format G): Report Footer        : $ReportFooter"
 	Write-Verbose "$(Get-Date -Format G): Save As HTML         : $($HTML)"
 	Write-Verbose "$(Get-Date -Format G): Save As PDF          : $($PDF)"
 	Write-Verbose "$(Get-Date -Format G): Save As TEXT         : $($TEXT)"
@@ -3326,38 +3517,6 @@ Function ShowScriptOptions
 	Write-Verbose "$(Get-Date -Format G): "
 	Write-Verbose "$(Get-Date -Format G): "
 }
-
-Function AbortScript
-{
-	If($MSWord -or $PDF)
-	{
-		If(Test-Path variable:script:word)
-		{
-			$Script:Word.quit()
-			Write-Verbose "$(Get-Date -Format G): System Cleanup"
-			[System.Runtime.Interopservices.Marshal]::ReleaseComObject($Script:Word) | Out-Null
-			Remove-Variable -Name word -Scope Script 4>$Null
-		}
-		#is the winword process still running? kill it
-
-		#find out our session (usually "1" except on TS/RDC or Citrix)
-		$SessionID = (Get-Process -PID $PID).SessionId
-
-		#Find out if winword is running in our session
-		$wordprocess = $Null
-		$wordprocess = (Get-Process 'WinWord' -ea 0) | Where-Object {$_.SessionId -eq $SessionID}
-		If($null -ne $wordprocess -and $wordprocess.Id -gt 0)
-		{
-			Write-Verbose "$(Get-Date -Format G): WinWord process is still running. Attempting to stop WinWord process # $($wordprocess.Id)"
-			Stop-Process $wordprocess.Id -EA 0
-		}
-	}
-	[gc]::collect() 
-	[gc]::WaitForPendingFinalizers()
-	Write-Verbose "$(Get-Date -Format G): Script has been aborted"
-	Exit
-}
-
 #endregion
 
 #region email function
@@ -3688,6 +3847,7 @@ Function ProcessScriptEnd
 		Out-File -FilePath $SIFile -Append -InputObject "From                 : $($From)" 4>$Null
 		Out-File -FilePath $SIFile -Append -InputObject "Log                  : $($Log)" 4>$Null
 		Out-File -FilePath $SIFile -Append -InputObject "RAS Version          : $($Script:RASVersion)" 4>$Null
+		Out-File -FilePath $SIFile -Append -InputObject "Report Footer        : $ReportFooter" 4>$Null
 		Out-File -FilePath $SIFile -Append -InputObject "Save As HTML         : $($HTML)" 4>$Null
 		Out-File -FilePath $SIFile -Append -InputObject "Save As PDF          : $($PDF)" 4>$Null
 		Out-File -FilePath $SIFile -Append -InputObject "Save As TEXT         : $($TEXT)" 4>$Null
@@ -23308,6 +23468,11 @@ If(($MSWORD -or $PDF) -and ($Script:CoverPagesExist))
 	$AbstractTitle = "Parallels RAS Inventory Report"
 	$SubjectTitle = "Parallels RAS Inventory Report"
 	UpdateDocumentProperties $AbstractTitle $SubjectTitle
+}
+
+If($ReportFooter)
+{
+	OutputReportFooter
 }
 
 ProcessDocumentOutput "Regular"
